@@ -10,7 +10,7 @@
    <a href="https://steamcommunity.com/profiles/76561198200466026" target"blank_"><img src="https://img.shields.io/badge/steam%20-171a21.svg?&style=for-the-badge&logo=steam&logoColor=white"></a>
 <a href="https://open.spotify.com/user/31jngbszpqr4yxe5uom3ik5x4eme" target"blank_"><img src="https://img.shields.io/badge/Spotify%20-1ed760.svg?&style=for-the-badge&logo=spotify&logoColor=white"></a>
 <a href="https://www.instagram.com/mehmetcanwt/" target"blank_"><img src="https://img.shields.io/badge/INSTAGRAM%20-DC3175.svg?&style=for-the-badge&logo=instagram&logoColor=white"></a>
-<a href="https://discord.gg/G5jwP749Tw" target"blank_"><img src="https://img.shields.io/discord/1001236277259157616?style=for-the-badge&color=7289da&label=WT&logo=node.js&logoColor=white"></a>
+<a href="https://discord.gg/G5jwP749Tw" target"blank_"><img src="https://img.shields.io/badge/Discord-Join-pink?style=for-the-badge&logo=discord"></a>
 <a href="https://www.buymeacoffee.com/mehmetcanwt" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 <img src="https://count.getloli.com/get/@:wt?theme=gelbooru-h" alt=":wt" />
 </p>
