@@ -9,12 +9,8 @@
 <a href="https://open.spotify.com/user/31jngbszpqr4yxe5uom3ik5x4eme" target"blank_"><img src="https://img.shields.io/badge/Spotify%20-1ed760.svg?&style=for-the-badge&logo=spotify&logoColor=white"></a>
 <a href="https://discord.gg/G5jwP749Tw" target"blank_"><img src="https://img.shields.io/badge/Discord-Join-pink?style=for-the-badge&logo=discord"></a>
 <br></br>
-<a href="https://discord.com/users/302443204018700290" title="Discord Account"><img src="https://lanyard-profile-readme.vercel.app/api/302443204018700290"></a>
 
 <div align="center">
- 
-<code>![Alt text](https://spotify-recently-played-readme.vercel.app/api?user=31jngbszpqr4yxe5uom3ik5x4eme)</code>
- 
 <img src="https://count.getloli.com/get/@:wt?theme=gelbooru-h" alt=":wt" />
 </div>
 <br></br>
