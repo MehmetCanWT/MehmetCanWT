@@ -58,15 +58,145 @@ body {
   }
 }
 
-/* Buton glow effect */
-.button-glow {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, box-shadow;
+/* Anime-style button effects */
+.anime-button {
+  position: relative;
+  background-size: 200% 100%;
+  animation: gradient-shift 4s ease infinite;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-.button-glow:hover {
-  box-shadow: 0 0 15px #8b5cf6, 0 0 25px #ec4899;
-  transform: scale(1.05);
+.anime-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.anime-button:hover::before {
+  left: 100%;
+}
+
+.anime-button:hover {
+  transform: scale(1.05) translateY(-3px);
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(139, 92, 246, 0.7),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  animation-play-state: paused;
+}
+
+.anime-button:active {
+  transform: scale(0.98) translateY(1px);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(139, 92, 246, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Specific button colors and glows */
+.discord-btn:hover {
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(88, 101, 242, 0.9),
+    0 0 80px rgba(88, 101, 242, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.instagram-btn:hover {
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(236, 72, 153, 0.9),
+    0 0 80px rgba(236, 72, 153, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.github-btn:hover {
+  box-shadow: 
+    0 12px 35px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(255, 255, 255, 0.7),
+    0 0 80px rgba(255, 255, 255, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Icon glow effect */
+.icon-glow {
+  filter: drop-shadow(0 0 8px currentColor);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anime-button:hover .icon-glow {
+  filter: 
+    drop-shadow(0 0 12px currentColor) 
+    drop-shadow(0 0 20px currentColor)
+    drop-shadow(0 0 30px currentColor);
+  transform: scale(1.15) rotate(5deg);
+  animation: icon-bounce 0.6s ease;
+}
+
+@keyframes icon-bounce {
+  0%, 100% { transform: scale(1.15) rotate(5deg); }
+  50% { transform: scale(1.25) rotate(-5deg); }
+}
+
+/* Text shadow for better readability */
+.text-shadow {
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    0 0 15px rgba(255, 255, 255, 0.4),
+    0 0 25px currentColor;
+  transition: all 0.3s ease;
+}
+
+.anime-button:hover .text-shadow {
+  text-shadow: 
+    0 3px 6px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 255, 255, 0.6),
+    0 0 35px currentColor,
+    0 0 50px currentColor;
+}
+
+/* Gradient animation */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 200% 50%;
+  }
+  75% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Subtle floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.anime-button:not(:hover) {
+  animation: gradient-shift 4s ease infinite, float 3s ease-in-out infinite;
 }
 
 /* Particles container optimization */
