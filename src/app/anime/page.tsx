@@ -50,13 +50,23 @@ export default function AnimePage() {
       <div className="fixed top-4 left-4 z-20 sm:absolute">
         <Link
           href="/"
-          className="anime-button back-btn bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white py-3 px-4 sm:py-2 sm:px-4 rounded-xl relative overflow-hidden group transition-all duration-500 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 border border-white/20 shadow-lg"
+          className="anime-button back-btn bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white py-3 px-4 sm:py-2 sm:px-4 rounded-xl relative overflow-hidden group transition-all duration-500 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 border border-white/20 shadow-lg inline-block"
+          aria-label="Go back to home page"
         >
           <div className="flex items-center justify-center gap-2 relative z-10 font-bold text-sm">
             <span className="text-lg sm:text-base">←</span>
             <span className="text-shadow hidden sm:inline">Back</span>
           </div>
+          
+          {/* Anime-style shine effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+          
+          {/* Border glow effect */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          {/* Sparkle effects */}
+          <div className="absolute top-1 right-2 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-all duration-300"></div>
+          <div className="absolute bottom-1 left-2 w-1 h-1 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-all duration-500 delay-100"></div>
         </Link>
       </div>
 
