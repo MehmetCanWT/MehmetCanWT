@@ -1,6 +1,7 @@
 "use client";
 
 import { FaDiscord, FaInstagram, FaGithub } from "react-icons/fa";
+import { GiFlowerPot } from "react-icons/gi";
 import { memo, useMemo } from "react";
 
 type SocialButton = {
@@ -15,8 +16,9 @@ type ButtonsProps = {
 function ButtonsComponent({ accounts }: ButtonsProps) {
   const getIcon = useMemo(() => (name: string) => {
     switch (name.toLowerCase()) {
-      case "discord": return <FaDiscord size={24} className="icon-glow" />;
+      case "anime": return <GiFlowerPot size={24}  className="icon-glow" />;
       case "instagram": return <FaInstagram size={24} className="icon-glow" />;
+      case "discord": return <FaDiscord size={24} className="icon-glow" />;
       case "github": return <FaGithub size={24} className="icon-glow" />;
       default: return null;
     }
@@ -24,9 +26,10 @@ function ButtonsComponent({ accounts }: ButtonsProps) {
 
   const getBgClass = useMemo(() => (name: string) => {
     switch (name.toLowerCase()) {
-      case "discord": return "anime-button discord-btn bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600";
       case "instagram": return "anime-button instagram-btn bg-gradient-to-r from-pink-400 via-rose-500 to-pink-600";
+      case "discord": return "anime-button discord-btn bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600";
       case "github": return "anime-button github-btn bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900";
+      case "anime": return "anime-button anime-btn bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500";
       default: return "anime-button bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900";
     }
   }, []);

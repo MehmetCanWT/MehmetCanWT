@@ -9,6 +9,31 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Prevent browser extension interference */
+.no-zoom,
+.no-zoom * {
+  pointer-events: none !important;
+}
+
+img.no-zoom {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-drag: none !important;
+}
+
+/* Prevent hover zoom extension conflicts */
+img[class*="hoverZoom"] {
+  pointer-events: none !important;
+}
+
+/* Force disable browser extensions on images */
+[data-extension] {
+  display: none !important;
+}
+
 /* Dark anime gradient background (fallback) */
 body {
   background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
@@ -423,4 +448,76 @@ body {
 @keyframes footer-glow {
   0% { opacity: 0.6; }
   100% { opacity: 1; }
+}
+
+/* Special Anime Navigation Button */
+.anime-nav-btn {
+  background-size: 200% 100%;
+  animation: anime-nav-glow 3s ease-in-out infinite;
+  box-shadow: 
+    0 6px 20px rgba(236, 72, 153, 0.4),
+    0 0 30px rgba(168, 85, 247, 0.3),
+    0 0 50px rgba(99, 102, 241, 0.2);
+  position: relative;
+  display: inline-block;
+  text-decoration: none;
+  z-index: 10;
+}
+
+.anime-nav-btn:hover {
+  box-shadow: 
+    0 8px 30px rgba(236, 72, 153, 0.6),
+    0 0 50px rgba(168, 85, 247, 0.5),
+    0 0 80px rgba(99, 102, 241, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  filter: brightness(1.15) saturate(1.2);
+  animation-play-state: running;
+  transform: scale(1.05);
+}
+
+@keyframes anime-nav-glow {
+  0%, 100% {
+    background-position: 0% 50%;
+    box-shadow: 
+      0 6px 20px rgba(236, 72, 153, 0.4),
+      0 0 30px rgba(168, 85, 247, 0.3),
+      0 0 50px rgba(99, 102, 241, 0.2);
+  }
+  50% {
+    background-position: 100% 50%;
+    box-shadow: 
+      0 8px 25px rgba(236, 72, 153, 0.5),
+      0 0 40px rgba(168, 85, 247, 0.4),
+      0 0 60px rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* Anime page specific styles */
+.anime-card {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anime-card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(236, 72, 153, 0.4),
+    0 0 50px rgba(168, 85, 247, 0.2);
+}
+
+.anime-card-title {
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+  transition: all 0.3s ease;
+}
+
+.anime-card:hover .anime-card-title {
+  text-shadow: 0 0 15px rgba(192, 132, 252, 0.8);
+  color: #f0abfc;
+}
+
+.back-btn:hover {
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(168, 85, 247, 0.6),
+    0 0 50px rgba(236, 72, 153, 0.4);
 }

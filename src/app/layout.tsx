@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Poppins } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -9,13 +9,17 @@ const poppins = Poppins({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "MehmetCanWT - Anime & Code Enthusiast",
   description: "Anime themed personal website of MehmetCan - Full Stack Developer and Anime Enthusiast",
   keywords: ["mehmetcan", "developer", "anime", "coding", "portfolio"],
   authors: [{ name: "MehmetCan" }],
   creator: "MehmetCan",
-  viewport: "width=device-width, initial-scale=1",
   robots: "index, follow",
   openGraph: {
     title: "MehmetCanWT - Anime & Code Enthusiast",

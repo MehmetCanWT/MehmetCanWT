@@ -12,8 +12,9 @@ export default function Home() {
   const username = "mehmetcanwt";
 
   const socialAccounts = useMemo(() => [
-    { name: "Discord", url: `https://discord.com/users/${username}` },
+    { name: "Anime", url: "/anime" },
     { name: "Instagram", url: `https://instagram.com/${username}` },
+    { name: "Discord", url: `https://discord.com/users/${username}` },
     { name: "GitHub", url: `https://github.com/${username}` },
   ], [username]);
 
@@ -47,9 +48,11 @@ export default function Home() {
               src="https://lh3.googleusercontent.com/a/ACg8ocKICuR1GyCWBEDYC9GCjFg7KBBA_JXEXkAvTPnb8SrLmYav_3yI=s288-c-no"
               alt="Profile"
               fill
-              className="object-cover"
+              className="object-cover no-zoom"
               priority
               sizes="128px"
+              suppressHydrationWarning
+              style={{ pointerEvents: 'none' }}
             />
           </div>
           {/* Anime-style sparkles around avatar */}
@@ -99,8 +102,10 @@ export default function Home() {
           alt="Visitor Count"
           width={500}
           height={50}
-          className="mx-auto filter brightness-125 contrast-110 drop-shadow-[0_0_20px_rgba(255,192,203,0.9)] hover:scale-105 transition-transform duration-300 anime-counter"
+          className="mx-auto filter brightness-125 contrast-110 drop-shadow-[0_0_20px_rgba(255,192,203,0.9)] hover:scale-105 transition-transform duration-300 anime-counter no-zoom"
           unoptimized
+          suppressHydrationWarning
+          style={{ pointerEvents: 'none' }}
         />
       </div>
 
