@@ -1,11 +1,21 @@
 @import "tailwindcss";
 
+/* Performance optimizations */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 /* Dark anime gradient background (fallback) */
 body {
   background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
   background-size: 400% 400%;
   animation: gradientBG 20s ease infinite;
   color: #ffffff;
+  will-change: background-position;
 }
 
 /* Arka plan animasyonu */
@@ -15,19 +25,57 @@ body {
   100% { background-position: 0% 50%; }
 }
 
-/* Avatar bounce animation */
-img.avatar {
+/* Avatar bounce animation - tüm container için */
+.avatar-container {
   user-select: none;
   animation: bounce 2.5s infinite;
+  will-change: transform;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.avatar-container:hover {
+  transform: scale(1.05);
+  animation-play-state: paused;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6), 0 0 20px rgba(236, 72, 153, 0.4);
+}
+
+/* Eski avatar class'ını kaldırdık, şimdi container animasyonu var */
+.avatar {
+  user-select: none;
+  animation: bounce 2.5s infinite;
+  will-change: transform;
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+  0%, 100% { 
+    transform: translateY(0);
+    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+  }
+  50% { 
+    transform: translateY(-12px);
+    box-shadow: 0 16px 32px rgba(139, 92, 246, 0.4);
+  }
 }
 
 /* Buton glow effect */
+.button-glow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
 .button-glow:hover {
   box-shadow: 0 0 15px #8b5cf6, 0 0 25px #ec4899;
   transform: scale(1.05);
+}
+
+/* Particles container optimization */
+#tsparticles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  will-change: auto;
 }

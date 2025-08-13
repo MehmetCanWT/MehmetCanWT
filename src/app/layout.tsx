@@ -8,8 +8,24 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "MehmetCanWT",
-  description: "Anime themed personal website",
+  title: "MehmetCanWT - Anime & Code Enthusiast",
+  description: "Anime themed personal website of MehmetCan - Full Stack Developer and Anime Enthusiast",
+  keywords: ["mehmetcan", "developer", "anime", "coding", "portfolio"],
+  authors: [{ name: "MehmetCan" }],
+  creator: "MehmetCan",
+  viewport: "width=device-width, initial-scale=1",
+  robots: "index, follow",
+  openGraph: {
+    title: "MehmetCanWT - Anime & Code Enthusiast",
+    description: "Anime themed personal website of MehmetCan - Full Stack Developer and Anime Enthusiast",
+    type: "website",
+    locale: "tr_TR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MehmetCanWT - Anime & Code Enthusiast",
+    description: "Anime themed personal website of MehmetCan - Full Stack Developer and Anime Enthusiast",
+  },
 };
 
 export default function RootLayout({

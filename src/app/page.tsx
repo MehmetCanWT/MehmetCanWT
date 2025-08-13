@@ -3,17 +3,19 @@
 import Buttons from "@/components/Buttons";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { Press_Start_2P } from "next/font/google";
+import Image from "next/image";
+import { useMemo } from "react";
 
 const pressStart = Press_Start_2P({ subsets: ["latin"], weight: ["400"] });
 
 export default function Home() {
   const username = "mehmetcanwt";
 
-  const socialAccounts = [
+  const socialAccounts = useMemo(() => [
     { name: "Discord", url: `https://discord.com/users/${username}` },
     { name: "Instagram", url: `https://instagram.com/${username}` },
     { name: "GitHub", url: `https://github.com/${username}` },
-  ];
+  ], [username]);
 
   return (
     <main
@@ -23,11 +25,16 @@ export default function Home() {
       <ParticlesBackground />
 
       {/* Profil Foto */}
-      <img
-        src="https://lh3.googleusercontent.com/a/ACg8ocKICuR1GyCWBEDYC9GCjFg7KBBA_JXEXkAvTPnb8SrLmYav_3yI=s288-c-no"
-        alt="Profile"
-        className="w-32 h-32 rounded-full border-4 border-purple-500 shadow-lg avatar"
-      />
+      <div className="relative w-32 h-32 rounded-full border-4 border-purple-500 overflow-hidden avatar-container">
+        <Image
+          src="https://lh3.googleusercontent.com/a/ACg8ocKICuR1GyCWBEDYC9GCjFg7KBBA_JXEXkAvTPnb8SrLmYav_3yI=s288-c-no"
+          alt="Profile"
+          fill
+          className="object-cover"
+          priority
+          sizes="128px"
+        />
+      </div>
 
       {/* İsim */}
       <h1 className="text-3xl font-bold mt-4 text-purple-300">MehmetCan</h1>
@@ -38,10 +45,13 @@ export default function Home() {
 
       {/* Visitor sayacı */}
       <div className="mt-6">
-        <img
+        <Image
           src="https://count.getloli.com/@mehmetcanwt?name=mehmetcanwt&theme=booru-qualityhentais&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=0"
           alt="Visitor Count"
+          width={200}
+          height={50}
           className="mx-auto filter brightness-125 drop-shadow-[0_0_15px_rgba(255,192,203,0.9)]"
+          unoptimized
         />
       </div>
     </main>
