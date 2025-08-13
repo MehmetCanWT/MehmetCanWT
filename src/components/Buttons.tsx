@@ -12,7 +12,7 @@ type ButtonsProps = {
   accounts: SocialButton[];
 };
 
-const Buttons = memo(function Buttons({ accounts }: ButtonsProps) {
+function ButtonsComponent({ accounts }: ButtonsProps) {
   const getIcon = useMemo(() => (name: string) => {
     switch (name.toLowerCase()) {
       case "discord": return <FaDiscord size={24} className="icon-glow" />;
@@ -61,8 +61,9 @@ const Buttons = memo(function Buttons({ accounts }: ButtonsProps) {
       ))}
     </div>
   );
-});
+}
 
+const Buttons = memo(ButtonsComponent);
 Buttons.displayName = 'Buttons';
 
 export default Buttons;
