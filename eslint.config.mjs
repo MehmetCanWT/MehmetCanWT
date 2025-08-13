@@ -15,6 +15,8 @@ const eslintConfig = [
     extends: ['next'],
     rules: {
       'react/display-name': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   }),
 ];export default eslintConfig;

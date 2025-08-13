@@ -4,7 +4,7 @@ import { Press_Start_2P } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import ParticlesBackground from "@/components/ParticlesBackground";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 const pressStart = Press_Start_2P({ subsets: ["latin"], weight: ["400"] });
 
@@ -21,7 +21,7 @@ export default function AnimePage() {
   const [loading, setLoading] = useState(true);
 
   // Anime verilerini tanımla (AniList ID'leri ile)
-  const favoriteAnimes = [
+  const favoriteAnimes = useMemo(() => [
     {
       id: 21,
       name: "One Piece",
@@ -29,16 +29,34 @@ export default function AnimePage() {
       status: "Watching"
     },
     {
-      id: 182469,
-      name: "One Piece Fan Letter",
-      rating: "10/10",
-      status: "Completed"
-    },
-    {
       id: 20,
       name: "Naruto", 
       rating: "10/10", 
       status: "Completed"
+    },
+    {
+      id: 269,
+      name: "Bleach", 
+      rating: "10/10", 
+      status: "Completed"
+    },
+    {
+      id: 182469,
+      name: "One Piece Fan Letter",
+      rating: "8/10",
+      status: "Completed"
+    },
+    {
+      id: 113415,
+      name: "Jujutsu Kaisen", 
+      rating: "10/10", 
+      status: "Watching"
+    },
+    {
+      id: 132405,
+      name: "My Dress Up Darling", 
+      rating: "8/10", 
+      status: "Watching"
     },
     {
       id: 101922,
@@ -52,7 +70,7 @@ export default function AnimePage() {
       rating: "9/10",
       status: "Watching"
     },
-  ];
+  ], []);
 
   // Anime verilerini API'den çek
   useEffect(() => {
@@ -98,7 +116,7 @@ export default function AnimePage() {
     };
 
     fetchAnimeData();
-  }, []);
+  }, [favoriteAnimes]);
 
   return (
     <main
