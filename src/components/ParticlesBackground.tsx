@@ -3,14 +3,14 @@
 import { useCallback, useMemo } from "react";
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
-import type { Container, Engine } from "tsparticles-engine";
+import type { Engine } from "tsparticles-engine";
 
 export default function ParticlesBackground() {
   const particlesInit = useCallback(async (engine: Engine) => {
     await loadSlim(engine);
   }, []);
 
-  const particlesLoaded = useCallback(async (container?: Container) => {
+  const particlesLoaded = useCallback(async () => {
     // Container yüklendiğinde çalışır
   }, []);
 

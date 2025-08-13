@@ -44,13 +44,13 @@ export default function Home() {
       <Buttons accounts={socialAccounts} />
 
       {/* Visitor sayacı */}
-      <div className="mt-6">
+      <div className="mt-8">
         <Image
-          src="https://count.getloli.com/@mehmetcanwt?name=mehmetcanwt&theme=booru-qualityhentais&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=0"
+          src="https://count.getloli.com/@mehmetcanwt?name=mehmetcanwt&theme=booru-qualityhentais&padding=10&offset=0&align=top&scale=1.5&pixelated=1&darkmode=0"
           alt="Visitor Count"
-          width={200}
+          width={500}
           height={50}
-          className="mx-auto filter brightness-125 drop-shadow-[0_0_15px_rgba(255,192,203,0.9)]"
+          className="mx-auto filter brightness-125 contrast-110 drop-shadow-[0_0_20px_rgba(255,192,203,0.9)] hover:scale-105 transition-transform duration-300"
           unoptimized
         />
       </div>

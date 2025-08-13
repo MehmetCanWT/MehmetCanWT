@@ -63,4 +63,6 @@ const Buttons = memo(function Buttons({ accounts }: ButtonsProps) {
   );
 });
 
+Buttons.displayName = 'Buttons';
+
 export default Buttons;
