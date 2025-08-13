@@ -4,30 +4,101 @@ import { Press_Start_2P } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import ParticlesBackground from "@/components/ParticlesBackground";
+import { useEffect, useState } from "react";
 
 const pressStart = Press_Start_2P({ subsets: ["latin"], weight: ["400"] });
 
+interface AnimeItem {
+  id: number;
+  name: string;
+  imageUrl: string;
+  rating: string;
+  status: string;
+}
+
 export default function AnimePage() {
+  const [animeList, setAnimeList] = useState<AnimeItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Anime verilerini tanımla (AniList ID'leri ile)
   const favoriteAnimes = [
     {
+      id: 21,
       name: "One Piece",
-      image: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg",
       rating: "10/10",
       status: "Watching"
     },
     {
-      name: "Naruto",
-      image: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20-dE6UHbFFg1A5.jpg",
+      id: 182469,
+      name: "One Piece Fan Letter",
       rating: "10/10",
       status: "Completed"
     },
     {
+      id: 20,
+      name: "Naruto", 
+      rating: "10/10", 
+      status: "Completed"
+    },
+    {
+      id: 101922,
       name: "Demon Slayer",
-      image: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg",
+      rating: "9/10",
+      status: "Watching"
+    },
+    {
+      id: 21459,
+      name: "My Hero Academia",
       rating: "9/10",
       status: "Watching"
     },
   ];
+
+  // Anime verilerini API'den çek
+  useEffect(() => {
+    const fetchAnimeData = async () => {
+      try {
+        setLoading(true);
+        
+        const response = await fetch('/api/anime', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            animes: favoriteAnimes,
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          const mappedAnimes = result.data.map((anime: any, index: number) => ({
+            id: anime.id,
+            name: anime.name,
+            imageUrl: anime.imageUrl,
+            rating: favoriteAnimes[index].rating,
+            status: favoriteAnimes[index].status,
+          }));
+          
+          setAnimeList(mappedAnimes);
+          
+          // Hataları logla
+          if (result.errors) {
+            console.warn('Some anime data could not be fetched:', result.errors);
+          }
+        } else {
+          console.error('Failed to fetch anime data:', result.error);
+        }
+      } catch (error) {
+        console.error('Error fetching anime data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnimeData();
+  }, []);
 
   return (
     <main
@@ -83,58 +154,77 @@ export default function AnimePage() {
         <p className="kawaii-text text-sm sm:text-base">My Favorite Anime Collection</p>
       </div>
 
-      {/* Anime grid - Mobile friendly */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto px-4 w-full">
-        {favoriteAnimes.map((anime, index) => (
-          <div
-            key={index}
-            className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-lg border border-white/10 rounded-2xl p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:border-pink-400/50"
-          >
-            <div className="relative w-full h-48 sm:h-64 mb-3 sm:mb-4 rounded-xl overflow-hidden">
-              <Image
-                src={anime.image}
-                alt={anime.name}
-                fill
-                className="object-cover transition-transform duration-500 hover:scale-110 no-zoom"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                suppressHydrationWarning
-                style={{ pointerEvents: 'none' }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-            </div>
-            
-            <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 anime-card-title">
-              {anime.name}
-            </h3>
-            
-            <div className="flex justify-between items-center flex-wrap gap-2">
-              <span className="kawaii-text-small text-xs sm:text-sm">
-                Rating: <span className="text-yellow-300">{anime.rating}</span>
-              </span>
-              <span className={`px-2 py-1 rounded-full text-xs ${
-                anime.status === 'Completed' 
-                  ? 'bg-green-500/20 text-green-300' 
-                  : 'bg-blue-500/20 text-blue-300'
-              }`}>
-                {anime.status}
-              </span>
+      {/* Loading state */}
+      {loading ? (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-lg border border-white/10 rounded-2xl p-6">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+              <p className="kawaii-text-small">Loading anime data...</p>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <>
+          {/* Anime grid - Mobile friendly with portrait layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto px-4 w-full">
+            {animeList.map((anime, index) => (
+              <div
+                key={anime.id}
+                className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-lg border border-white/10 rounded-2xl p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:border-pink-400/50 max-w-sm mx-auto"
+              >
+                <div className="relative w-full h-72 sm:h-80 mb-3 sm:mb-4 rounded-xl overflow-hidden shadow-lg">
+                  <Image
+                    src={anime.imageUrl}
+                    alt={anime.name}
+                    fill
+                    className="object-cover object-center transition-transform duration-500 hover:scale-110 no-zoom brightness-110 contrast-105 saturate-110"
+                    sizes="(max-width: 640px) 300px, (max-width: 1024px) 350px, (max-width: 1280px) 400px, 450px"
+                    priority={index < 3} // İlk 3 resim için priority
+                    quality={95} // Yüksek kalite
+                    suppressHydrationWarning
+                    style={{ pointerEvents: 'none' }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                  
+                  {/* Anime glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-pink-500/10 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                
+                <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 anime-card-title">
+                  {anime.name}
+                </h3>
+                
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <span className="kawaii-text-small text-xs sm:text-sm">
+                    Rating: <span className="text-yellow-300">{anime.rating}</span>
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    anime.status === 'Completed' 
+                      ? 'bg-green-500/20 text-green-300' 
+                      : 'bg-blue-500/20 text-blue-300'
+                  }`}>
+                    {anime.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      {/* Add more anime placeholder - Mobile friendly */}
-      <div className="mt-6 sm:mt-8 anime-status-badge px-4">
-        <span className="status-text text-sm sm:text-base">More anime coming soon...</span>
-        <span className="kawaii-emoji">🎌</span>
-      </div>
+          {/* Add more anime placeholder - Mobile friendly */}
+          <div className="mt-6 sm:mt-8 anime-status-badge px-4">
+            <span className="status-text text-sm sm:text-base">More anime coming soon...</span>
+            <span className="kawaii-emoji">🎌</span>
+          </div>
 
-      {/* Footer message - Mobile friendly */}
-      <div className="anime-footer mt-6 sm:mt-8 px-4 pb-4">
-        <p className="kawaii-text-small text-xs sm:text-sm">
-          アニメが大好きです! <span className="kawaii-emoji">💖</span>
-        </p>
-      </div>
+          {/* Footer message - Mobile friendly */}
+          <div className="anime-footer mt-6 sm:mt-8 px-4 pb-4">
+            <p className="kawaii-text-small text-xs sm:text-sm">
+              アニメが大好きです! <span className="kawaii-emoji">💖</span>
+            </p>
+          </div>
+        </>
+      )}
     </main>
   );
 }
