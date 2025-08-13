@@ -1,11 +1,24 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
 import type { Engine } from "tsparticles-engine";
 
 export default function ParticlesBackground() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const particlesInit = useCallback(async (engine: Engine) => {
     await loadSlim(engine);
   }, []);
@@ -20,11 +33,11 @@ export default function ParticlesBackground() {
         value: "transparent",
       },
     },
-    fpsLimit: 60, // FPS limitini düşürdük
+    fpsLimit: isMobile ? 30 : 60, // Mobilde FPS'i daha da düşür
     interactivity: {
       events: {
         onClick: {
-          enable: true,
+          enable: !isMobile, // Mobilde click interactivity'yi kapat
           mode: "push",
         },
         onHover: {
@@ -34,7 +47,7 @@ export default function ParticlesBackground() {
       },
       modes: {
         push: {
-          quantity: 4, // Daha az parçacık ekliyoruz
+          quantity: isMobile ? 2 : 4, // Mobilde daha az parçacık
         },
       },
     },
@@ -55,31 +68,31 @@ export default function ParticlesBackground() {
       number: {
         density: {
           enable: true,
-          area: 1200, // Daha geniş alan
+          area: isMobile ? 1800 : 1200, // Mobilde daha geniş alan (daha az yoğunluk)
         },
-        value: 60, // Parçacık sayısını azalttık
+        value: isMobile ? 25 : 60, // Mobilde çok daha az parçacık
       },
       opacity: {
         value: { min: 0.3, max: 1 },
         animation: {
-          enable: true,
-          speed: 1.5, // Animasyon hızını azalttık
+          enable: !isMobile, // Mobilde opacity animasyonunu kapat
+          speed: 1.5,
           minimumValue: 0.1,
           sync: false,
         },
       },
       size: {
-        value: { min: 1, max: 4 },
+        value: { min: 1, max: isMobile ? 3 : 4 }, // Mobilde daha küçük parçacıklar
         animation: {
-          enable: true,
-          speed: 2, // Animasyon hızını azalttık
+          enable: !isMobile, // Mobilde size animasyonunu kapat
+          speed: 2,
           minimumValue: 0.5,
           sync: false,
         },
       },
       move: {
         enable: true,
-        speed: { min: 0.05, max: 0.3 }, // Hareket hızını azalttık
+        speed: { min: 0.05, max: isMobile ? 0.2 : 0.3 }, // Mobilde daha yavaş hareket
         direction: "none" as const,
         random: true,
         straight: false,
@@ -92,14 +105,14 @@ export default function ParticlesBackground() {
       },
       twinkle: {
         particles: {
-          enable: true,
-          frequency: 0.03, // Twinkle frekansını azalttık
+          enable: !isMobile, // Mobilde twinkle'ı kapat
+          frequency: 0.03,
           opacity: 1,
         },
       },
     },
     detectRetina: true,
-  }), []);
+  }), [isMobile]);
 
   return (
     <Particles

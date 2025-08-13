@@ -35,15 +35,15 @@ export default function AnimePage() {
       status: "Completed"
     },
     {
-      id: 269,
-      name: "Bleach", 
+      id: 11061,
+      name: "Hunter x Hunter", 
       rating: "10/10", 
       status: "Completed"
     },
     {
-      id: 182469,
-      name: "One Piece Fan Letter",
-      rating: "8/10",
+      id: 269,
+      name: "Bleach", 
+      rating: "10/10", 
       status: "Completed"
     },
     {
@@ -51,6 +51,12 @@ export default function AnimePage() {
       name: "Jujutsu Kaisen", 
       rating: "10/10", 
       status: "Watching"
+    },
+    {
+      id: 182469,
+      name: "One Piece Fan Letter",
+      rating: "8/10",
+      status: "Completed"
     },
     {
       id: 132405,
@@ -139,7 +145,7 @@ export default function AnimePage() {
       <div className="fixed top-4 left-4 z-20 sm:absolute">
         <Link
           href="/"
-          className="anime-button back-btn bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white py-3 px-4 sm:py-2 sm:px-4 rounded-xl relative overflow-hidden group transition-all duration-500 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 border border-white/20 shadow-lg inline-block"
+          className="anime-button back-btn bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 text-white py-3 px-4 sm:py-2 sm:px-4 rounded-xl relative overflow-hidden group transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50 border border-white/20 shadow-lg inline-block"
           aria-label="Go back to home page"
         >
           <div className="flex items-center justify-center gap-2 relative z-10 font-bold text-sm">
@@ -147,15 +153,8 @@ export default function AnimePage() {
             <span className="text-shadow hidden sm:inline">Back</span>
           </div>
           
-          {/* Anime-style shine effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-          
-          {/* Border glow effect */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          
-          {/* Sparkle effects */}
-          <div className="absolute top-1 right-2 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-all duration-300"></div>
-          <div className="absolute bottom-1 left-2 w-1 h-1 bg-purple-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-all duration-500 delay-100"></div>
+          {/* Mobilde basit efekt */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500 ease-in-out hidden sm:block"></div>
         </Link>
       </div>
 
@@ -175,7 +174,7 @@ export default function AnimePage() {
       {/* Loading state */}
       {loading ? (
         <div className="flex justify-center items-center min-h-[400px]">
-          <div className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-lg border border-white/10 rounded-2xl p-6">
+          <div className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <div className="flex flex-col items-center gap-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
               <p className="kawaii-text-small">Loading anime data...</p>
@@ -189,24 +188,25 @@ export default function AnimePage() {
             {animeList.map((anime, index) => (
               <div
                 key={anime.id}
-                className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-lg border border-white/10 rounded-2xl p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:border-pink-400/50 max-w-sm mx-auto"
+                className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] hover:border-pink-400/50 max-w-sm mx-auto"
               >
                 <div className="relative w-full h-72 sm:h-80 mb-3 sm:mb-4 rounded-xl overflow-hidden shadow-lg">
                   <Image
                     src={anime.imageUrl}
                     alt={anime.name}
                     fill
-                    className="object-cover object-center transition-transform duration-500 hover:scale-110 no-zoom brightness-110 contrast-105 saturate-110"
-                    sizes="(max-width: 640px) 300px, (max-width: 1024px) 350px, (max-width: 1280px) 400px, 450px"
-                    priority={index < 3} // İlk 3 resim için priority
-                    quality={95} // Yüksek kalite
+                    className="object-cover object-center transition-transform duration-300 hover:scale-105 brightness-110 contrast-105 saturate-110"
+                    sizes="(max-width: 640px) 280px, (max-width: 1024px) 320px, (max-width: 1280px) 360px, 400px"
+                    priority={index < 2} // Sadece ilk 2 resim için priority
+                    quality={index < 4 ? 85 : 75} // İlk 4 resim yüksek kalite, diğerleri düşük
+                    loading={index < 4 ? "eager" : "lazy"} // İlk 4 resim hemen, diğerleri lazy
                     suppressHydrationWarning
                     style={{ pointerEvents: 'none' }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
                   
-                  {/* Anime glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-pink-500/10 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                  {/* Mobilde glow effect'i azalt */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 via-transparent to-pink-500/5 opacity-0 hover:opacity-100 transition-opacity duration-200"></div>
                 </div>
                 
                 <h3 className="text-base sm:text-lg font-bold text-purple-300 mb-2 anime-card-title">
