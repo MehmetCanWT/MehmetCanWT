@@ -4,7 +4,7 @@ import { Press_Start_2P } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import ParticlesBackground from "@/components/ParticlesBackground";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 
 const pressStart = Press_Start_2P({ subsets: ["latin"], weight: ["400"] });
 
@@ -20,109 +20,39 @@ export default function AnimePage() {
   const [animeList, setAnimeList] = useState<AnimeItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Anime verilerini tanımla (AniList ID'leri ile)
-  const favoriteAnimes = useMemo(() => [
-    {
-      id: 21,
-      name: "One Piece",
-      rating: "10/10",
-      status: "Watching"
-    },
-    {
-      id: 20,
-      name: "Naruto", 
-      rating: "10/10", 
-      status: "Completed"
-    },
-    {
-      id: 11061,
-      name: "Hunter x Hunter", 
-      rating: "10/10", 
-      status: "Completed"
-    },
-    {
-      id: 269,
-      name: "Bleach", 
-      rating: "10/10", 
-      status: "Completed"
-    },
-    {
-      id: 113415,
-      name: "Jujutsu Kaisen", 
-      rating: "10/10", 
-      status: "Watching"
-    },
-    {
-      id: 182469,
-      name: "One Piece Fan Letter",
-      rating: "8/10",
-      status: "Completed"
-    },
-    {
-      id: 132405,
-      name: "My Dress Up Darling", 
-      rating: "8/10", 
-      status: "Watching"
-    },
-    {
-      id: 101922,
-      name: "Demon Slayer",
-      rating: "9/10",
-      status: "Watching"
-    },
-    {
-      id: 21459,
-      name: "My Hero Academia",
-      rating: "9/10",
-      status: "Watching"
-    },
-  ], []);
-
-  // Anime verilerini API'den çek
+  // Kullanıcı anime listesini sadece database'den çek
   useEffect(() => {
-    const fetchAnimeData = async () => {
+    const fetchUserAnimeList = async () => {
       try {
         setLoading(true);
         
-        const response = await fetch('/api/anime', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            animes: favoriteAnimes,
-          }),
-        });
-
+        // Sadece database'den çek, güncelleme yapmadan
+        const response = await fetch('/api/user-anime?cache_only=true');
         const result = await response.json();
         
         if (result.success) {
-          const mappedAnimes = result.data.map((anime: any, index: number) => ({
+          const mappedAnimes = result.data.map((anime: any) => ({
             id: anime.id,
-            name: anime.name,
-            imageUrl: anime.imageUrl,
-            rating: favoriteAnimes[index].rating,
-            status: favoriteAnimes[index].status,
+            name: anime.title_english || anime.title_romaji,
+            imageUrl: anime.image_url,
+            rating: anime.score > 0 ? `${(anime.score / 10).toFixed(1)}/10` : 'Unrated',
+            status: anime.status,
           }));
           
           setAnimeList(mappedAnimes);
-          
-          // Hataları logla
-          if (result.errors) {
-            console.warn('Some anime data could not be fetched:', result.errors);
-          }
+          console.log(`Loaded ${mappedAnimes.length} anime from database cache`);
         } else {
-          console.error('Failed to fetch anime data:', result.error);
+          console.error('Failed to fetch user anime list:', result.error);
         }
       } catch (error) {
-        console.error('Error fetching anime data:', error);
+        console.error('Error fetching user anime list:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAnimeData();
-  }, [favoriteAnimes]);
+    fetchUserAnimeList();
+  }, []);
 
   return (
     <main
@@ -168,7 +98,7 @@ export default function AnimePage() {
           <span className="inline-block">e</span>
           <span className="kawaii-emoji ml-2 sm:ml-4">🌸</span>
         </h1>
-        <p className="kawaii-text text-sm sm:text-base">My Favorite Anime Collection</p>
+        <p className="kawaii-text text-sm sm:text-base">My AniList Collection (auto-updated hourly)</p>
       </div>
 
       {/* Loading state */}
@@ -177,7 +107,7 @@ export default function AnimePage() {
           <div className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-sm border border-white/10 rounded-2xl p-6">
             <div className="flex flex-col items-center gap-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-              <p className="kawaii-text-small">Loading anime data...</p>
+              <p className="kawaii-text-small">Loading anime collection...</p>
             </div>
           </div>
         </div>
@@ -213,17 +143,29 @@ export default function AnimePage() {
                   {anime.name}
                 </h3>
                 
-                <div className="flex justify-between items-center flex-wrap gap-2">
-                  <span className="kawaii-text-small text-xs sm:text-sm">
-                    Rating: <span className="text-yellow-300">{anime.rating}</span>
-                  </span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    anime.status === 'Completed' 
-                      ? 'bg-green-500/20 text-green-300' 
-                      : 'bg-blue-500/20 text-blue-300'
-                  }`}>
-                    {anime.status}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center flex-wrap gap-2">
+                    <span className="kawaii-text-small text-xs sm:text-sm">
+                      Rating: <span className="text-yellow-300">{anime.rating}</span>
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      anime.status === 'COMPLETED' 
+                        ? 'bg-green-500/20 text-green-300' 
+                        : anime.status === 'WATCHING'
+                        ? 'bg-blue-500/20 text-blue-300'
+                        : anime.status === 'PAUSED'
+                        ? 'bg-orange-500/20 text-orange-300'
+                        : anime.status === 'DROPPED'
+                        ? 'bg-red-500/20 text-red-300'
+                        : 'bg-purple-500/20 text-purple-300'
+                    }`}>
+                      {anime.status === 'COMPLETED' ? 'Completed' : 
+                       anime.status === 'WATCHING' ? 'Watching' : 
+                       anime.status === 'PAUSED' ? 'Paused' : 
+                       anime.status === 'DROPPED' ? 'Dropped' : 
+                       anime.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
