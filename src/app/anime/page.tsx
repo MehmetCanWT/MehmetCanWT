@@ -20,6 +20,19 @@ export default function AnimePage() {
   const [animeList, setAnimeList] = useState<AnimeItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Score'u yıldıza çeviren fonksiyon (1-10 score -> 1-5 yıldız)
+  const getStarRating = (score: string) => {
+    const numScore = parseInt(score);
+    if (numScore === 0) return 'Unrated';
+    
+    // 1-10 score'u 1-5 yıldıza çevir (2 puan = 1 yıldız)
+    const stars = Math.round(numScore / 2);
+    const filledStars = '★'.repeat(stars);
+    const emptyStars = '☆'.repeat(5 - stars);
+    
+    return filledStars + emptyStars;
+  };
+
   // Kullanıcı anime listesini sadece database'den çek
   useEffect(() => {
     const fetchUserAnimeList = async () => {
@@ -35,7 +48,7 @@ export default function AnimePage() {
             id: anime.id,
             name: anime.title_english || anime.title_romaji,
             imageUrl: anime.image_url,
-            rating: anime.score > 0 ? `${(anime.score / 10).toFixed(1)}/10` : 'Unrated',
+            rating: anime.score > 0 ? anime.score.toString() : '0', // Score'u string olarak sakla
             status: anime.status,
           }));
           
@@ -145,9 +158,12 @@ export default function AnimePage() {
                 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center flex-wrap gap-2">
-                    <span className="kawaii-text-small text-xs sm:text-sm">
-                      Rating: <span className="text-yellow-300">{anime.rating}</span>
-                    </span>
+                    <div className="kawaii-text-small text-xs sm:text-sm">
+                      <div className="text-yellow-300 text-lg">{getStarRating(anime.rating)}</div>
+                      {anime.rating !== '0' && (
+                        <div className="text-gray-400 text-xs mt-1">{anime.rating}/10</div>
+                      )}
+                    </div>
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       anime.status === 'COMPLETED' 
                         ? 'bg-green-500/20 text-green-300' 
