@@ -2,6 +2,7 @@
 
 import Buttons from "@/components/Buttons";
 import ParticlesBackground from "@/components/ParticlesBackground";
+import SpotifyPlayer from "@/components/SpotifyPlayer";
 import { Press_Start_2P } from "next/font/google";
 import Image from "next/image";
 import { useMemo } from "react";
@@ -90,6 +91,11 @@ export default function Home() {
 
       {/* Sosyal medya butonları */}
       <Buttons accounts={socialAccounts} />
+
+      {/* Spotify Player */}
+      <div className="w-full max-w-md mt-6">
+        <SpotifyPlayer />
+      </div>
 
       {/* Anime-style visitor counter */}
       <div className="mt-8 anime-counter-container">
