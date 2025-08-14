@@ -10,6 +10,7 @@ interface SpotifyTrack {
   preview_url: string | null;
   external_url: string;
   is_playing: boolean;
+  played_at?: string; // Recently played timestamp
 }
 
 export default function SpotifyPlayer() {
@@ -17,6 +18,7 @@ export default function SpotifyPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRecentlyPlayed, setIsRecentlyPlayed] = useState(false);
 
   useEffect(() => {
     fetchCurrentTrack();
@@ -32,9 +34,11 @@ export default function SpotifyPlayer() {
       
       if (data.success && data.track) {
         setCurrentTrack(data.track);
+        setIsRecentlyPlayed(data.message === 'Recently played track');
         setLoading(false);
       } else {
         setCurrentTrack(null);
+        setIsRecentlyPlayed(false);
         setLoading(false);
       }
     } catch (error) {
@@ -80,12 +84,12 @@ export default function SpotifyPlayer() {
     return (
       <div className="spotify-player bg-gradient-to-r from-green-900/30 via-green-800/20 to-green-900/30 backdrop-filter backdrop-blur-sm border border-green-400/20 rounded-2xl p-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+          <div className="w-16 h-16 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
             <span className="text-green-400 text-xl">🎵</span>
           </div>
           <div className="flex-1">
-            <p className="text-green-300 font-medium">No music playing</p>
-            <p className="text-green-400/70 text-sm">Connect to Spotify to see current track</p>
+            <p className="text-green-300 font-medium">No recent music found</p>
+            <p className="text-green-400/70 text-sm">Play something on Spotify to see it here</p>
           </div>
         </div>
       </div>
@@ -94,9 +98,9 @@ export default function SpotifyPlayer() {
 
   return (
     <div className="spotify-player bg-gradient-to-r from-green-900/30 via-green-800/20 to-green-900/30 backdrop-filter backdrop-blur-sm border border-green-400/20 rounded-2xl p-4 mb-6 transition-all duration-300 hover:border-green-400/40">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Album Art */}
-        <div className="relative w-12 h-12 rounded-lg overflow-hidden shadow-lg">
+        <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-lg flex-shrink-0">
           <img
             src={currentTrack.image}
             alt={currentTrack.album}
@@ -118,11 +122,15 @@ export default function SpotifyPlayer() {
             by {currentTrack.artist}
           </p>
           <div className="flex items-center justify-center mt-1">
-            {currentTrack.is_playing && (
+            {currentTrack.is_playing ? (
               <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-300">
                 🎵 Playing
               </span>
-            )}
+            ) : isRecentlyPlayed ? (
+              <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">
+                🕒 Recently played
+              </span>
+            ) : null}
           </div>
         </div>
 
