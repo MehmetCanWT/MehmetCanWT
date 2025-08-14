@@ -117,14 +117,12 @@ export default function SpotifyPlayer() {
           <p className="text-green-400/70 text-xs truncate">
             by {currentTrack.artist}
           </p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              currentTrack.is_playing 
-                ? 'bg-green-500/20 text-green-300' 
-                : 'bg-gray-500/20 text-gray-400'
-            }`}>
-              {currentTrack.is_playing ? '🎵 Playing' : '⏸️ Paused'}
-            </span>
+          <div className="flex items-center justify-center mt-1">
+            {currentTrack.is_playing && (
+              <span className="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-300">
+                🎵 Playing
+              </span>
+            )}
           </div>
         </div>
 
