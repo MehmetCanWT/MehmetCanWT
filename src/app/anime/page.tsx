@@ -20,13 +20,14 @@ export default function AnimePage() {
   const [animeList, setAnimeList] = useState<AnimeItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Score'u yıldıza çeviren fonksiyon (1-10 score -> 1-5 yıldız)
+  // Score'u yıldıza çeviren fonksiyon (AniList score 1-5 arası geliyor)
   const getStarRating = (score: string) => {
     const numScore = parseInt(score);
-    if (numScore === 0) return 'Unrated';
+    if (!numScore || numScore <= 0) return 'Unrated';
     
-    // 1-10 score'u 1-5 yıldıza çevir (2 puan = 1 yıldız)
-    const stars = Math.round(numScore / 2);
+    // Score zaten 1-5 arasında, yıldız sayısını sınırla
+    const stars = Math.max(1, Math.min(5, numScore));
+    
     const filledStars = '★'.repeat(stars);
     const emptyStars = '☆'.repeat(5 - stars);
     
@@ -161,7 +162,7 @@ export default function AnimePage() {
                     <div className="kawaii-text-small text-xs sm:text-sm">
                       <div className="text-yellow-300 text-lg">{getStarRating(anime.rating)}</div>
                       {anime.rating !== '0' && (
-                        <div className="text-gray-400 text-xs mt-1">{anime.rating}/10</div>
+                        <div className="text-gray-400 text-xs mt-1">{anime.rating}/5</div>
                       )}
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs ${
