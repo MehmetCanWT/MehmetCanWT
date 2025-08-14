@@ -89,7 +89,6 @@ export default function SpotifyPlayer() {
           </div>
           <div className="flex-1">
             <p className="text-green-300 font-medium">No recent music found</p>
-            <p className="text-green-400/70 text-sm">Play something on Spotify to see it here</p>
           </div>
         </div>
       </div>
