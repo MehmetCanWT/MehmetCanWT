@@ -132,9 +132,9 @@ export default function AnimePage() {
             {animeList.map((anime, index) => (
               <div
                 key={anime.id}
-                className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] hover:border-pink-400/50 max-w-sm mx-auto"
+                className="anime-card bg-gradient-to-br from-purple-900/30 via-pink-900/20 to-indigo-900/30 backdrop-filter backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] hover:border-pink-400/50 w-full max-w-sm mx-auto"
               >
-                <div className="relative w-full h-72 sm:h-80 mb-3 sm:mb-4 rounded-xl overflow-hidden shadow-lg">
+                <div className="relative w-full aspect-[3/4] mb-3 sm:mb-4 rounded-xl overflow-hidden shadow-lg">
                   <Image
                     src={anime.imageUrl}
                     alt={anime.name}
@@ -161,9 +161,6 @@ export default function AnimePage() {
                   <div className="flex justify-between items-center flex-wrap gap-2">
                     <div className="kawaii-text-small text-xs sm:text-sm">
                       <div className="text-yellow-300 text-lg">{getStarRating(anime.rating)}</div>
-                      {anime.rating !== '0' && (
-                        <div className="text-gray-400 text-xs mt-1">{anime.rating}/5</div>
-                      )}
                     </div>
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       anime.status === 'COMPLETED' 

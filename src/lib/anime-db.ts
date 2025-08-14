@@ -70,7 +70,6 @@ export async function fetchUserAnimeListFromAniList(username: string) {
                   extraLarge
                   large
                 }
-                averageScore
               }
               status
               score
@@ -115,7 +114,7 @@ export async function fetchUserAnimeListFromAniList(username: string) {
         title_romaji: entry.media.title.romaji,
         image_url: entry.media.coverImage.extraLarge || entry.media.coverImage.large,
         status: entry.status,
-        score: entry.score || entry.media.averageScore || 0, // Kullanıcı skoru yoksa AniList ortalama skoru
+        score: entry.score || 0, // Sadece kullanıcının verdiği score
         progress: entry.progress || 0,
       }));
     }
