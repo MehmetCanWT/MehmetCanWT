@@ -123,7 +123,7 @@ export default function AnimePage() {
           <span className="inline-block">e</span>
           <span className="kawaii-emoji ml-2 sm:ml-4">🌸</span>
         </h1>
-        <p className="kawaii-text text-sm sm:text-base">My AniList Collection</p>
+        <p className="kawaii-text text-sm sm:text-base">My Anime Collection</p>
       </div>
 
       {/* Loading state */}
