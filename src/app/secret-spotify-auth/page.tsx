@@ -46,7 +46,7 @@ export default function SpotifyAuthPage() {
       if (data.success) {
         setStep(3);
       }
-    } catch (error) {
+    } catch {
       setResult({ success: false, error: 'Network error' });
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ export default function SpotifyAuthPage() {
             <h2 className="text-2xl font-bold mb-6">1️⃣ Spotify Authorization</h2>
             
             <div className="bg-green-900/30 p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold mb-4">📋 Gerekli Scope'lar:</h3>
+              <h3 className="text-lg font-semibold mb-4">📋 Gerekli Scopelar:</h3>
               <ul className="space-y-2">
                 <li>✅ user-read-currently-playing</li>
                 <li>✅ user-read-playback-state</li>
@@ -79,8 +79,8 @@ export default function SpotifyAuthPage() {
               <h3 className="text-lg font-semibold mb-4">⚠️ Önemli Notlar:</h3>
               <ul className="space-y-2 text-sm">
                 <li>• Redirect URI: http://127.0.0.1:3000/callback</li>
-                <li>• Bu URI Spotify Dashboard'da ayarlanmış olmalı</li>
-                <li>• Authorization sonrası URL'den code'u kopyalayacaksınız</li>
+                <li>• Bu URI Spotify Dashboard&apos;da ayarlanmış olmalı</li>
+                <li>• Authorization sonrası URL&apos;den code&apos;u kopyalayacaksınız</li>
               </ul>
             </div>
 
@@ -91,7 +91,7 @@ export default function SpotifyAuthPage() {
                 rel="noopener noreferrer"
                 className="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full text-lg transition-colors duration-200 transform hover:scale-105"
               >
-                🔑 Spotify'da Yetki Ver
+                🔑 Spotify&apos;da Yetki Ver
               </a>
               
               <button
@@ -109,9 +109,9 @@ export default function SpotifyAuthPage() {
             <h2 className="text-2xl font-bold mb-6">2️⃣ Authorization Code</h2>
             
             <div className="bg-blue-900/30 p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold mb-4">📝 Code'u Yapıştırın:</h3>
+              <h3 className="text-lg font-semibold mb-4">📝 Code&apos;u Yapıştırın:</h3>
               <p className="text-sm text-gray-300 mb-4">
-                Callback sayfasından aldığınız authorization code'u aşağıya yapıştırın:
+                Callback sayfasından aldığınız authorization code&apos;u aşağıya yapıştırın:
               </p>
               
               <textarea
@@ -157,7 +157,7 @@ export default function SpotifyAuthPage() {
                 </div>
 
                 <div className="bg-black/50 p-4 rounded-lg mb-6">
-                  <h4 className="font-semibold mb-2">🎯 Scope'lar:</h4>
+                  <h4 className="font-semibold mb-2">🎯 Scopelar:</h4>
                   <code className="text-green-300">{result.scope}</code>
                 </div>
 
@@ -166,7 +166,7 @@ export default function SpotifyAuthPage() {
                   <ol className="list-decimal list-inside space-y-2 text-sm">
                     <li>.env.local dosyasını açın</li>
                     <li>SPOTIFY_REFRESH_TOKEN değerini yukarıdaki token ile değiştirin</li>
-                    <li>Development server'ı yeniden başlatın</li>
+                    <li>Development server&apos;ı yeniden başlatın</li>
                     <li>Recently played özelliği artık çalışacak! 🎵</li>
                   </ol>
                 </div>
@@ -189,7 +189,7 @@ export default function SpotifyAuthPage() {
         {/* Footer */}
         <div className="text-center mt-12 text-gray-400 text-sm">
           <p>🔒 Bu sayfa sadece development ortamında erişilebilir</p>
-          <p>Production'da bu sayfa mevcut olmayacak</p>
+          <p>Production&apos;da bu sayfa mevcut olmayacak</p>
         </div>
       </div>
     </div>
