@@ -32,12 +32,8 @@ function SpotifyPlayer() {
 
   useEffect(() => {
     fetchCurrentTrack();
-    fetchRecentlyPlayed();
-    // Her 30 saniyede bir güncelle
-    const interval = setInterval(() => {
-      fetchCurrentTrack();
-      fetchRecentlyPlayed();
-    }, 30000);
+    // Her 30 saniyede bir sadece current track'i güncelle
+    const interval = setInterval(fetchCurrentTrack, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -51,13 +47,17 @@ function SpotifyPlayer() {
         setLoading(false);
       } else {
         setCurrentTrack(null);
+        // Sadece current track null olduğunda recently played'i çek
+        if (recentlyPlayed.length === 0) {
+          fetchRecentlyPlayed();
+        }
         setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching current track:', error);
       setLoading(false);
     }
-  }, []);
+  }, [recentlyPlayed.length]);
 
   const fetchRecentlyPlayed = useCallback(async () => {
     try {
