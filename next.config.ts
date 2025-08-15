@@ -23,6 +23,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.anilist.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mosaic.scdn.co',
+      },
     ],
     // Resim kalitesi için ek ayarlar
     formats: ['image/webp', 'image/avif'],

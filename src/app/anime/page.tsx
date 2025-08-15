@@ -3,10 +3,21 @@
 import { Press_Start_2P } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import ParticlesBackground from "@/components/ParticlesBackground";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
-const pressStart = Press_Start_2P({ subsets: ["latin"], weight: ["400"] });
+// ParticlesBackground'u lazy load et
+const ParticlesBackground = dynamic(() => import("@/components/ParticlesBackground"), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-indigo-900/20 to-black/20" />
+});
+
+const pressStart = Press_Start_2P({ 
+  subsets: ["latin"], 
+  weight: ["400"],
+  display: 'swap',
+  preload: true,
+});
 
 interface AnimeItem {
   id: number;

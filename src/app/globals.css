@@ -9,6 +9,29 @@ html {
   scroll-behavior: smooth;
 }
 
+/* GPU acceleration for animations */
+.anime-button,
+.floating-star,
+.kawaii-text,
+.spotify-player {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Reduce backdrop blur for better performance */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(8px);
+}
+
+/* Optimize image loading */
+img {
+  content-visibility: auto;
+}
+
 /* Prevent browser extension interference */
 .no-zoom,
 .no-zoom * {

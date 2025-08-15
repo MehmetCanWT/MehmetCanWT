@@ -8,6 +8,8 @@ import { Analytics } from "@vercel/analytics/next";
 const poppins = Poppins({
   weight: ["400", "700"],
   subsets: ["latin"],
+  display: 'swap',
+  preload: true,
 });
 
 export const viewport: Viewport = {
@@ -43,12 +45,21 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
+        {/* Resource hints for better performance */}
+        <link rel="preconnect" href="https://api.spotify.com" />
+        <link rel="preconnect" href="https://i.scdn.co" />
+        <link rel="preconnect" href="https://s4.anilist.co" />
+        <link rel="preconnect" href="https://cdn.anilist.co" />
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+        
         {/* Umami Analytics */}
-        <Script
-          src={process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL}
-          data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
-          strategy="afterInteractive"
-        />
+        {process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL && process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+          <Script
+            src={process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL}
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        )}
       </head>
       <body
         className={`${poppins.className} min-h-screen bg-gradient-to-b from-purple-900 via-indigo-900 to-black text-white`}
