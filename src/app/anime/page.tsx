@@ -3,7 +3,7 @@
 import { Press_Start_2P } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 
 // ParticlesBackground'u lazy load et
@@ -152,11 +152,14 @@ export default function AnimePage() {
                     fill
                     className="object-cover object-center transition-transform duration-300 hover:scale-105 brightness-110 contrast-105 saturate-110"
                     sizes="(max-width: 640px) 280px, (max-width: 1024px) 320px, (max-width: 1280px) 360px, 400px"
-                    priority={index < 2} // Sadece ilk 2 resim için priority
-                    quality={index < 4 ? 85 : 75} // İlk 4 resim yüksek kalite, diğerleri düşük
-                    loading={index < 4 ? "eager" : "lazy"} // İlk 4 resim hemen, diğerleri lazy
+                    priority={index < 4} // İlk 4 resim için priority
+                    quality={index < 6 ? 90 : 80} // İlk 6 resim yüksek kalite, diğerleri düşük
+                    loading={index < 6 ? "eager" : "lazy"} // İlk 6 resim hemen, diğerleri lazy
                     suppressHydrationWarning
-                    style={{ pointerEvents: 'none' }}
+                    style={{ 
+                      pointerEvents: 'none',
+                      contentVisibility: index > 8 ? 'auto' : 'visible'
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
                   
