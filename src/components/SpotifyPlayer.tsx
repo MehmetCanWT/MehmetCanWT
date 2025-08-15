@@ -30,11 +30,17 @@ function SpotifyPlayer() {
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCurrentTrack();
-    // Her 30 saniyede bir sadece current track'i güncelle
-    const interval = setInterval(fetchCurrentTrack, 30000);
-    return () => clearInterval(interval);
+  const fetchRecentlyPlayed = useCallback(async () => {
+    try {
+      const response = await fetch('/api/spotify/recently-played');
+      const data = await response.json();
+      
+      if (data.success && data.tracks) {
+        setRecentlyPlayed(data.tracks);
+      }
+    } catch (error) {
+      console.error('Error fetching recently played tracks:', error);
+    }
   }, []);
 
   const fetchCurrentTrack = useCallback(async () => {
@@ -57,20 +63,14 @@ function SpotifyPlayer() {
       console.error('Error fetching current track:', error);
       setLoading(false);
     }
-  }, [recentlyPlayed.length]);
+  }, [recentlyPlayed.length, fetchRecentlyPlayed]);
 
-  const fetchRecentlyPlayed = useCallback(async () => {
-    try {
-      const response = await fetch('/api/spotify/recently-played');
-      const data = await response.json();
-      
-      if (data.success && data.tracks) {
-        setRecentlyPlayed(data.tracks);
-      }
-    } catch (error) {
-      console.error('Error fetching recently played tracks:', error);
-    }
-  }, []);
+  useEffect(() => {
+    fetchCurrentTrack();
+    // Her 30 saniyede bir sadece current track'i güncelle
+    const interval = setInterval(fetchCurrentTrack, 30000);
+    return () => clearInterval(interval);
+  }, [fetchCurrentTrack]);
 
   const togglePlay = useCallback(() => {
     if (!currentTrack?.preview_url) return;

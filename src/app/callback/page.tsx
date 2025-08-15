@@ -64,9 +64,9 @@ function CallbackContent() {
             <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4 mb-6">
               <h3 className="font-semibold mb-2">📋 Sonraki Adımlar:</h3>
               <ol className="list-decimal list-inside space-y-1 text-sm">
-                <li>Yukarıdaki code'u kopyalayın</li>
+                <li>Yukarıdaki code&apos;u kopyalayın</li>
                 <li>Auth sayfasına geri dönün</li>
-                <li>Code'u yapıştırıp "Token Al" butonuna tıklayın</li>
+                <li>Code&apos;u yapıştırıp &quot;Token Al&quot; butonuna tıklayın</li>
               </ol>
             </div>
 

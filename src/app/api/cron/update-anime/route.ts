@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET request için de güncelleme yapalım (cron job uyumluluğu için)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await initializeDatabase();
     
