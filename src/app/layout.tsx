@@ -1,15 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Poppins } from "next/font/google";
+import { Outfit, Noto_Sans_JP } from "next/font/google";
 import Script from 'next/script'
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
-const poppins = Poppins({
-  weight: ["400", "700"],
+const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-outfit",
   display: 'swap',
-  preload: true,
+});
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-noto-sans-jp",
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
@@ -62,7 +68,7 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${poppins.className} min-h-screen bg-gradient-to-b from-purple-900 via-indigo-900 to-black text-white`}
+        className={`${outfit.variable} ${notoSansJP.variable} font-outfit min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden`}
       >
         {children}
         <Analytics />
