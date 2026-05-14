@@ -131,19 +131,12 @@ export default async function Home() {
 
       {/* Footer Decoration */}
       <footer className="fixed bottom-0 left-0 w-full h-12 bg-black border-t-4 border-black flex items-center justify-center overflow-hidden">
-        <div className="flex whitespace-nowrap animate-[scroll_20s_linear_infinite] text-white font-black italic tracking-tighter text-2xl uppercase">
+        <div className="flex whitespace-nowrap animate-manga-scroll text-white font-black italic tracking-tighter text-2xl uppercase">
           {Array(10).fill("MEHMETCANWT // MANGA SYSTEM // GAMING MODE // VDS ONLINE // ").map((t, i) => (
             <span key={i} className="mx-4">{t}</span>
           ))}
         </div>
       </footer>
-
-      <style jsx global>{`
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
     </div>
   );
 }
