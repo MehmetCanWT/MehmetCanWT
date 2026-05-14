@@ -8,7 +8,7 @@
 }
 
 export async function getAllGames(steamId: string): Promise<SteamGame[]> {
-  if (!process.env.STEAM_API_KEY) {
+  if (!process.env.WEB_KEY) {
     return [
       { appid: 730, name: "Counter-Strike 2", playtime_forever: 12450, playtime_2weeks: 450, img_icon_url: "" },
       { appid: 570, name: "Dota 2", playtime_forever: 8900, playtime_2weeks: 0, img_icon_url: "" },
@@ -25,7 +25,7 @@ export async function getAllGames(steamId: string): Promise<SteamGame[]> {
     // include_played_free_games=true ensures free games like CS2/Dota 2 are included
     // include_extended_appinfo=true fetches more metadata
     const response = await fetch(
-      `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${process.env.STEAM_API_KEY}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&include_extended_appinfo=true&format=json`
+      `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${process.env.WEB_KEY}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&include_extended_appinfo=true&format=json`
     );
     const data = await response.json();
     return data.response.games || [];

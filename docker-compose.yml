@@ -1,18 +1,19 @@
 ﻿services:
-  mehmetcanwt:
-    container_name: mehmetcanwt
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - "3131:3000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - NODE_ENV=production
-    networks:
-      - bridge
+     mehmetcanwt:
+       container_name: mehmetcanwt
+       build:
+         context: .
+         dockerfile: Dockerfile
+       restart: always
+       ports:
+         - "3131:3000"
+       environment:
+         - DATABASE_URL=${DATABASE_URL}
+         - STEAM_API_KEY=${STEAM_API_KEY}
+         - NODE_ENV=production
+       networks:
+         - mehmetcanwt-net
 
-networks:
-  bridge:
-    external: true
+   networks:
+     mehmetcanwt-net:
+       driver: bridge
