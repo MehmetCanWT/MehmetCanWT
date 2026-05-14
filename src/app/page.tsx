@@ -1,6 +1,6 @@
 ﻿import { getAllAnime, getAnimeById } from "@/lib/anilist";
 import { getAllGames } from "@/lib/steam";
-import { BookOpen, Gamepad2, Zap, ArrowRight } from "lucide-react";
+import { BookOpen, Gamepad2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +47,7 @@ export default async function Home() {
                   <img 
                     src={favoriteAnime.coverImage.large} 
                     alt={favoriteAnime.title.english}
-                    className="w-full h-full object-cover grayscale"
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                   />
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
@@ -76,19 +76,23 @@ export default async function Home() {
             <div className="manga-panel relative group overflow-hidden bg-zinc-100 min-h-[300px]">
               <div className="absolute inset-0 halftone opacity-20"></div>
               <div className="relative z-10 flex flex-col justify-between h-full">
-                <div className="flex items-start justify-between">
-                  <div className="w-20 h-20 bg-black flex items-center justify-center text-white shrink-0">
-                    <Zap size={40} />
+                <div className="flex items-start justify-between gap-4">
+                  <div className="w-1/2 aspect-video border-4 border-black overflow-hidden bg-black shrink-0">
+                    <img 
+                      src={`https://cdn.akamai.steamstatic.com/steam/apps/${topGame.appid}/header.jpg`} 
+                      alt={topGame.name}
+                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                    />
                   </div>
-                  <div className="text-right">
-                    <p className="text-6xl font-black italic tracking-tighter">{(topGame.playtime_forever / 60).toFixed(0)}H</p>
+                  <div className="text-right flex-1">
+                    <p className="text-5xl font-black italic tracking-tighter leading-none">{(topGame.playtime_forever / 60).toFixed(0)}H</p>
                     <p className="font-bold uppercase text-xs">Total Playtime</p>
                   </div>
                 </div>
-                <div className="mt-8 border-t-4 border-black pt-4">
-                   <h3 className="text-4xl font-black uppercase italic leading-none">{topGame.name}</h3>
+                <div className="mt-4 border-t-4 border-black pt-4">
+                   <h3 className="text-4xl font-black uppercase italic leading-none line-clamp-1">{topGame.name}</h3>
                    <div className="mt-4 flex justify-between items-end">
-                      <p className="font-bold text-gray-600 uppercase tracking-widest">Active Status: Operational</p>
+                      <p className="font-bold text-gray-600 uppercase tracking-widest">Status: Mastered</p>
                       <Link href="/games" className="inline-flex items-center gap-2 font-black uppercase bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors">
                         Game Hub <ArrowRight size={18} />
                       </Link>
@@ -109,7 +113,7 @@ export default async function Home() {
       {/* Footer Decoration */}
       <footer className="fixed bottom-0 left-0 w-full h-12 bg-black border-t-4 border-black flex items-center justify-center overflow-hidden">
         <div className="flex whitespace-nowrap animate-manga-scroll text-white font-black italic tracking-tighter text-2xl uppercase">
-          {Array(10).fill("MEHMETCANWT // MANGA SYSTEM // GAMING MODE // VDS ONLINE // ").map((t, i) => (
+          {Array(10).fill("MEHMETCANWT // LEVEL UP YOUR EXPERIENCE // ANIME IS LIFE // GAMING IS PASSION // CONNECTING TO VDS... // ").map((t, i) => (
             <span key={i} className="mx-4">{t}</span>
           ))}
         </div>
