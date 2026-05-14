@@ -1,4 +1,4 @@
-﻿export interface SteamGame {
+export interface SteamGame {
   appid: number;
   name: string;
   playtime_forever: number;
@@ -36,11 +36,11 @@ export async function getAllGames(steamId: string): Promise<SteamGame[]> {
 }
 
 export async function getRecentGames(steamId: string): Promise<SteamGame[]> {
-  if (!process.env.STEAM_API_KEY) return (await getAllGames(steamId)).slice(0, 3);
+  if (!process.env.WEB_KEY) return (await getAllGames(steamId)).slice(0, 3);
 
   try {
     const response = await fetch(
-      `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${process.env.STEAM_API_KEY}&steamid=${steamId}&format=json`
+      `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${process.env.WEB_KEY}&steamid=${steamId}&format=json`
     );
     const data = await response.json();
     return data.response.games || [];
