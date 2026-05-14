@@ -9,20 +9,25 @@ datasource db {
 
 model Anime {
   id        String   @id @default(cuid())
-  title     String
-  status    String?
-  rating    Float?
-  imageUrl  String?
+  anilistId Int      @unique
+  title     String?
+  isPinned  Boolean  @default(false)
+  sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Game {
   id        String   @id @default(cuid())
-  title     String
-  platform  String?
-  rating    Float?
-  imageUrl  String?
+  steamId   Int      @unique
+  title     String?
+  isPinned  Boolean  @default(false)
+  sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AdminConfig {
+  id          String @id @default("global")
+  adminPass   String @default("159753")
 }

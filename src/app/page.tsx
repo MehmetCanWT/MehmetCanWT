@@ -1,12 +1,15 @@
-﻿import { getCurrentAnime } from "@/lib/anilist";
-import { getRecentGames } from "@/lib/steam";
-import { BookOpen, Gamepad2, User, Zap } from "lucide-react";
+﻿import { getAllAnime, getAnimeById } from "@/lib/anilist";
+import { getAllGames } from "@/lib/steam";
+import { BookOpen, Gamepad2, Zap, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const animes = await getCurrentAnime("MehmetCanWT");
-  const games = await getRecentGames("76561198200466026");
+  const favoriteAnime = await getAnimeById(21);
+  const allGames = await getAllGames("76561198200466026");
+  
+  const topGame = [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0];
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
@@ -17,116 +20,90 @@ export default async function Home() {
             Mehmet<span className="bg-black text-white px-2">Can</span>WT
           </h1>
           <p className="mt-4 text-xl font-bold uppercase tracking-widest border-t-4 border-black pt-2">
-            Manga Artist & Gaming Enthusiast // VDS Node 01
+            Personal Terminal // Node 01
           </p>
         </div>
-        <div className="manga-panel bg-black text-white flex flex-col items-center justify-center space-y-4">
-          <div className="w-24 h-24 border-4 border-white rounded-full flex items-center justify-center">
-            <User size={48} />
-          </div>
-          <div className="text-center">
-            <p className="font-black italic text-2xl uppercase">Status</p>
-            <p className="font-bold text-green-400 animate-pulse uppercase tracking-tighter">Online & Active</p>
-          </div>
-        </div>
+        <nav className="manga-panel bg-black text-white flex flex-col items-center justify-center space-y-4">
+           <Link href="/anime" className="text-2xl font-black italic uppercase hover:text-purple-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-white pb-2">
+             <BookOpen /> Anime List
+           </Link>
+           <Link href="/games" className="text-2xl font-black italic uppercase hover:text-pink-400 transition-colors flex items-center gap-2 w-full justify-center">
+             <Gamepad2 /> Game Vault
+           </Link>
+        </nav>
       </header>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      {/* Highlights Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
-        {/* Anime Section */}
-        <section className="md:col-span-7 space-y-6">
-          <div className="manga-title text-2xl flex items-center gap-2">
-            <BookOpen size={24} /> Currently Watching
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {animes.length > 0 ? (
-              animes.map((anime) => (
-                <div key={anime.id} className="manga-panel group overflow-hidden">
-                  <div className="relative aspect-[3/4] mb-4 border-2 border-black overflow-hidden">
-                    <img 
-                      src={anime.coverImage.large} 
-                      alt={anime.title.english || anime.title.romaji}
-                      className="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all duration-500 scale-110 group-hover:scale-100"
-                    />
-                    <div className="absolute top-0 right-0 bg-black text-white p-1 text-xs font-bold">
-                      {anime.averageScore}%
-                    </div>
-                  </div>
-                  <h3 className="font-black text-lg leading-tight uppercase line-clamp-2 min-h-[3rem]">
-                    {anime.title.english || anime.title.romaji}
-                  </h3>
-                  <div className="mt-2 flex justify-between items-center font-bold text-sm border-t-2 border-black pt-2">
-                    <span>EP {anime.progress}</span>
-                    <span className="uppercase text-[10px] bg-black text-white px-1">{anime.status}</span>
-                  </div>
+        {/* Favorite Anime Highlight */}
+        <section className="space-y-4">
+          <div className="manga-title text-2xl">FAVORITE SELECTION</div>
+          {favoriteAnime ? (
+            <div className="manga-panel relative group overflow-hidden bg-zinc-100 min-h-[300px]">
+              <div className="absolute inset-0 halftone opacity-20"></div>
+              <div className="relative z-10 flex gap-6 h-full">
+                <div className="w-1/3 aspect-[3/4] border-4 border-black overflow-hidden flex-shrink-0">
+                  <img 
+                    src={favoriteAnime.coverImage.large} 
+                    alt={favoriteAnime.title.english}
+                    className="w-full h-full object-cover grayscale"
+                  />
                 </div>
-              ))
-            ) : (
-              <div className="manga-panel col-span-2 text-center py-10 grayscale opacity-50">
-                <p className="font-black text-2xl">NO MANGA DATA FOUND</p>
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-4xl font-black uppercase leading-tight italic">{favoriteAnime.title.english || favoriteAnime.title.romaji}</h3>
+                    <p className="mt-2 font-bold text-gray-600 uppercase tracking-tighter">Ultimate Favorited</p>
+                  </div>
+                  <Link href="/anime" className="mt-4 inline-flex items-center gap-2 font-black uppercase bg-black text-white px-4 py-2 self-start hover:bg-gray-800 transition-colors">
+                    View Full List <ArrowRight size={18} />
+                  </Link>
+                </div>
               </div>
-            )}
-          </div>
+              <div className="absolute -bottom-4 -right-4 text-8xl font-black text-black/5 select-none pointer-events-none uppercase">
+                ONE PIECE
+              </div>
+            </div>
+          ) : (
+            <div className="manga-panel">Loading Favorite Anime...</div>
+          )}
         </section>
 
-        {/* Sidebar / Games & Tools */}
-        <aside className="md:col-span-5 space-y-8">
-          
-          {/* Games Section */}
-          <div className="space-y-4">
-            <div className="manga-title text-2xl flex items-center gap-2">
-              <Gamepad2 size={24} /> Recent Missions
-            </div>
-            <div className="space-y-3">
-              {games.map((game) => (
-                <div key={game.appid} className="manga-panel flex items-center gap-4 py-3">
-                  <div className="w-12 h-12 bg-black flex-shrink-0 flex items-center justify-center text-white">
-                    <Zap size={20} />
+        {/* Top Game Highlight */}
+        <section className="space-y-4">
+          <div className="manga-title text-2xl">MOST PLAYED MISSION</div>
+          {topGame ? (
+            <div className="manga-panel relative group overflow-hidden bg-zinc-100 min-h-[300px]">
+              <div className="absolute inset-0 halftone opacity-20"></div>
+              <div className="relative z-10 flex flex-col justify-between h-full">
+                <div className="flex items-start justify-between">
+                  <div className="w-20 h-20 bg-black flex items-center justify-center text-white shrink-0">
+                    <Zap size={40} />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-black uppercase text-sm leading-none mb-1">{game.name}</p>
-                    <p className="text-xs font-bold text-gray-600">
-                      {(game.playtime_forever / 60).toFixed(1)}H TOTAL
-                    </p>
+                  <div className="text-right">
+                    <p className="text-6xl font-black italic tracking-tighter">{(topGame.playtime_forever / 60).toFixed(0)}H</p>
+                    <p className="font-bold uppercase text-xs">Total Playtime</p>
                   </div>
-                  {game.playtime_2weeks && (
-                    <div className="text-[10px] font-black bg-black text-white p-1">
-                      ACTIVE
-                    </div>
-                  )}
                 </div>
-              ))}
+                <div className="mt-8 border-t-4 border-black pt-4">
+                   <h3 className="text-4xl font-black uppercase italic leading-none">{topGame.name}</h3>
+                   <div className="mt-4 flex justify-between items-end">
+                      <p className="font-bold text-gray-600 uppercase tracking-widest">Active Status: Operational</p>
+                      <Link href="/games" className="inline-flex items-center gap-2 font-black uppercase bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors">
+                        Game Hub <ArrowRight size={18} />
+                      </Link>
+                   </div>
+                </div>
+              </div>
+              <div className="absolute top-0 right-10 text-8xl font-black text-black/5 select-none pointer-events-none uppercase">
+                TOP
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="manga-panel">Loading Top Game...</div>
+          )}
+        </section>
 
-          {/* Quick Info Panel */}
-          <div className="manga-panel bg-zinc-100 halftone relative overflow-hidden">
-             <div className="relative z-10">
-               <h4 className="font-black uppercase text-xl mb-4 italic">System Logs</h4>
-               <ul className="space-y-2 text-xs font-bold uppercase">
-                 <li className="flex justify-between border-b border-black pb-1">
-                   <span>Platform:</span>
-                   <span>VDS Ubuntu</span>
-                 </li>
-                 <li className="flex justify-between border-b border-black pb-1">
-                   <span>Framework:</span>
-                   <span>Next.js 15</span>
-                 </li>
-                 <li className="flex justify-between border-b border-black pb-1">
-                   <span>Port:</span>
-                   <span>3131</span>
-                 </li>
-                 <li className="flex justify-between border-b border-black pb-1">
-                   <span>Status:</span>
-                   <span className="text-green-600">Operational</span>
-                 </li>
-               </ul>
-             </div>
-          </div>
-
-        </aside>
       </div>
 
       {/* Footer Decoration */}

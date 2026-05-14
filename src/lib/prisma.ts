@@ -9,3 +9,13 @@ export const prisma =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+export async function getPinnedAnimeIds() {
+  const pins = await prisma.anime.findMany({ where: { isPinned: true }, select: { anilistId: true } });
+  return pins.map(p => p.anilistId);
+}
+
+export async function getPinnedGameIds() {
+  const pins = await prisma.game.findMany({ where: { isPinned: true }, select: { steamId: true } });
+  return pins.map(p => p.steamId);
+}
