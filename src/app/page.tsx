@@ -1,18 +1,22 @@
 ﻿import { getAllAnime, getAnimeById } from "@/lib/anilist";
 import { getAllGames } from "@/lib/steam";
-import { BookOpen, Gamepad2, ArrowRight } from "lucide-react";
+import { getMixedNews } from "@/lib/news";
+import { BookOpen, Gamepad2, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const favoriteAnime = await getAnimeById(21);
-  const allGames = await getAllGames("76561198200466026");
+  const [favoriteAnime, allGames, news] = await Promise.all([
+    getAnimeById(21),
+    getAllGames("76561198200466026"),
+    getMixedNews()
+  ]);
   
   const topGame = [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0];
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-24">
       {/* Header Panel */}
       <header className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 manga-panel flex flex-col justify-center">
@@ -110,11 +114,26 @@ export default async function Home() {
 
       </div>
 
-      {/* Footer Decoration */}
-      <footer className="fixed bottom-0 left-0 w-full h-12 bg-black border-t-4 border-black flex items-center justify-center overflow-hidden">
-        <div className="flex whitespace-nowrap animate-manga-scroll text-white font-black italic tracking-tighter text-2xl uppercase">
-          {Array(10).fill("MEHMETCANWT // LEVEL UP YOUR EXPERIENCE // ANIME IS LIFE // GAMING IS PASSION // CONNECTING TO VDS... // ").map((t, i) => (
-            <span key={i} className="mx-4">{t}</span>
+      {/* Breaking News Ticker */}
+      <footer className="fixed bottom-0 left-0 w-full bg-black border-t-4 border-black h-16 flex items-center overflow-hidden z-50">
+        <div className="bg-red-600 text-white font-black italic px-4 py-full h-full flex items-center shrink-0 z-10 border-r-4 border-black shadow-[4px_0px_0px_0px_rgba(0,0,0,1)]">
+          BREAKING NEWS
+        </div>
+        <div className="flex whitespace-nowrap animate-manga-scroll text-white font-bold tracking-tight text-xl uppercase items-center">
+          {news.map((item, i) => (
+            <span key={i} className="mx-8 flex items-center gap-2">
+              <span className="text-red-500 font-black">●</span>
+              {item.title} 
+              <span className="text-xs bg-white text-black px-1 font-black ml-2">[{item.source}]</span>
+            </span>
+          ))}
+          {/* Loop for infinite feel */}
+          {news.map((item, i) => (
+            <span key={`loop-${i}`} className="mx-8 flex items-center gap-2">
+              <span className="text-red-500 font-black">●</span>
+              {item.title} 
+              <span className="text-xs bg-white text-black px-1 font-black ml-2">[{item.source}]</span>
+            </span>
           ))}
         </div>
       </footer>
