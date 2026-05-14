@@ -1,0 +1,18 @@
+﻿services:
+  mehmetcanwt:
+    container_name: mehmetcanwt
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3131:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - NODE_ENV=production
+    networks:
+      - bridge
+
+networks:
+  bridge:
+    external: true
