@@ -1,0 +1,13 @@
+Yeni projende maksimum performans, hız ve esneklik elde etmek için şu teknolojileri bir arada kullanabilirsin:
+Çalışma ortamı olarak Bun kullanmalısın çünkü Node.js'e kıyasla çok daha hızlı bir çalışma motorudur, paketleri jet hızında yükler ve TypeScript desteği kendiliğinden yerleşik olarak gelir.
+Backend framework tarafında ElysiaJS tercih edilmelidir çünkü Bun için sıfırdan özel olarak geliştirilmiştir, piyasadaki en hızlı API çatılarından biridir ve bellek tüketimi inanılmaz düşüktür.
+Frontend geliştirme ve derleme aracı olarak Vite kullanmalısın çünkü geliştirme aşamasında sunduğu anlık yenileme hızı muazzamdır, projeyi saniyeler içinde ayağa kaldırır ve gereksiz beklemeleri ortadan kaldırır.
+Arayüz kütüphanesi olarak mevcut projendeki tasarımları, temayı ve Manga stilini hiç bozmadan, birebir aynı kod mantığıyla aktarabilmek için React veya Vue arasından hangisiyle başladıysan onunla devam etmelisin.
+Backend ve frontend arasındaki iletişim köprüsü için Elysia Eden kullanmalısın çünkü bu araç, backend tarafında yazdığın tüm API rotalarını ve veri tiplerini frontend tarafına otomatik olarak taşır; böylece istek atarken hata yapma ihtimalini sıfıra indirir ve otomatik tamamlama desteği sağlar.
+Veritabanı yönetim aracı (ORM) olarak Drizzle ORM kullanmalısın çünkü Bun ve Elysia ile yerel olarak en uyumlu çalışan, en hafif yapay zeka ve TypeScript dostu araçtır; veritabanı sorgularını doğrudan TypeScript doğruluğuyla ve milisaniyeler içinde çalıştırır.
+Veritabanı seçimi olarak, eğer sunucu tabanlı büyük ve ilişkisel bir veri yapısı kuracaksan PostgreSQL, eğer yerel, gömülü ve yapılandırma gerektirmeyen çok hızlı bir veri saklama alanı istiyorsan Bun'ın içinde zaten hazır bulunan SQLite çözümünü tercih etmelisin.
+Görsel tasarım ve stil yönetimi için Tailwind CSS kullanmalısın çünkü tüm tasarımları doğrudan HTML sınıfları üzerinden yönetmeni sağlar, Vite ile mükemmel bir uyumla çalışır ve projenin Manga tarzı gibi özel tasarımlarını esnekçe şekillendirmene imkan tanır.
+Hazır arayüz bileşenleri için Shadcn UI tercih edilmelidir çünkü diğer hantal kütüphaneler gibi seni hazır temalara zorlamaz; buton, menü veya form gibi bileşenlerin kaynak kodlarını doğrudan senin projenin içine kopyalar, böylece kendi özel tasarım stilini kodlara tamamen yansıtabilirsin.
+Son olarak global durum yönetimi (State Management) ihtiyacın için, eğer frontend tarafında React kullanıyorsan aşırı hafif ve kurulumu saniyeler süren Zustand kütüphanesini, eğer Vue tercih ettiysen Vue 3 mimarisiyle en performanslı çalışan resmi Pinia kütüphanesini kullanmalısın.
+Tüm bu araçları tek bir klasör altında Monorepo düzeninde birleştirdiğinde, hem backend hem frontend tek bir projeden beslenir ve geliştirme sürecin inanılmaz akıcı hale gelir.
+

@@ -1,46 +1,29 @@
-﻿FROM node:20-alpine AS base
+FROM oven/bun:latest AS base
+WORKDIR /app
 
-# Install dependencies only when needed
+# Install dependencies
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+COPY package.json bun.lock ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY packages/db/package.json ./packages/db/
+RUN bun install --frozen-lockfile
 
-COPY package.json package-lock.json* ./
-RUN npm ci
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Build the apps
+FROM deps AS builder
 COPY . .
+# Build the web app for production
+RUN bun run build
 
-# Generate Prisma Client
-RUN npx prisma generate
-
-RUN npm run build
-
-# Production image, copy all the files and run next
+# Runner
 FROM base AS runner
 WORKDIR /app
+COPY --from=builder /app ./
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
+# Only expose 3000 in production
 EXPOSE 3000
 
-ENV PORT 3000
-# set hostname to localhost
-ENV HOSTNAME "0.0.0.0"
+ENV NODE_ENV production
 
-CMD ["node", "server.js"]
+# Start the unified Elysia server
+CMD ["bun", "run", "start"]
