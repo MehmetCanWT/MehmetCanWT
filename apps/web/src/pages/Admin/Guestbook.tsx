@@ -12,7 +12,7 @@ export default function AdminGuestbook() {
   const fetchData = async () => {
     setLoading(true);
     const res = await api.api.guestbook.get();
-    if (res.data) {
+    if (res.data && Array.isArray(res.data)) {
       setEntries(res.data);
     }
     setLoading(false);

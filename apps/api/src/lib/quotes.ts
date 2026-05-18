@@ -20,7 +20,10 @@ export async function getDailyQuote(forceUpdate: boolean = false): Promise<Quote
   try {
     if (!forceUpdate) {
       // 1. Check database for existing quote
-      const dbQuotes = await db.select().from(dailyQuote).where(eq(dailyQuote.id, "global")).catch(() => []);
+      let dbQuotes: any[] = [];
+      if (db) {
+        dbQuotes = await db.select().from(dailyQuote).where(eq(dailyQuote.id, "global")).catch(() => []);
+      }
       const dbQuoteItem = dbQuotes[0];
 
       // If it exists and is less than 24 hours old, return it
@@ -114,28 +117,30 @@ export async function getDailyQuote(forceUpdate: boolean = false): Promise<Quote
     }
 
     // 4. Save to Database
-    try {
-      await db.insert(dailyQuote).values({
-        id: "global",
-        quote: newQuote.quote,
-        character: newQuote.character,
-        anime: newQuote.anime,
-        characterImage,
-        animeImage,
-        updatedAt: new Date()
-      }).onConflictDoUpdate({
-        target: dailyQuote.id,
-        set: {
+    if (db) {
+      try {
+        await db.insert(dailyQuote).values({
+          id: "global",
           quote: newQuote.quote,
           character: newQuote.character,
           anime: newQuote.anime,
           characterImage,
           animeImage,
           updatedAt: new Date()
-        }
-      });
-    } catch (e) {
-      console.error("Could not save quote to DB - likely offline");
+        }).onConflictDoUpdate({
+          target: dailyQuote.id,
+          set: {
+            quote: newQuote.quote,
+            character: newQuote.character,
+            anime: newQuote.anime,
+            characterImage,
+            animeImage,
+            updatedAt: new Date()
+          }
+        });
+      } catch (e) {
+        console.error("Could not save quote to DB - likely offline");
+      }
     }
 
     return {
