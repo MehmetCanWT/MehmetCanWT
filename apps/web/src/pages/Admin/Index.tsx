@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, Gamepad2, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Gamepad2, ShieldCheck, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 
@@ -41,7 +41,7 @@ export default function AdminIndex() {
   }
 
   return (
-    <div className="min-h-screen p-8 max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen p-8 max-w-4xl mx-auto space-y-8 pb-20">
       <header className="flex justify-between items-center">
         <Link to="/" className="manga-panel flex items-center gap-2 font-black uppercase py-2 px-4 hover:bg-black hover:text-white transition-all">
           <LayoutDashboard size={20} /> Home
@@ -60,6 +60,12 @@ export default function AdminIndex() {
           <Gamepad2 size={64} className="group-hover:scale-110 transition-transform" />
           <span className="text-3xl font-black uppercase italic">Manage Games</span>
           <p className="text-xs font-bold opacity-60">Pin and reorder missions</p>
+        </Link>
+
+        <Link to="/admin/guestbook" className="md:col-span-2 manga-panel group hover:bg-black hover:text-white transition-all p-12 flex flex-col items-center justify-center space-y-4">
+          <MessageSquare size={64} className="group-hover:scale-110 transition-transform" />
+          <span className="text-3xl font-black uppercase italic">Manage Logs</span>
+          <p className="text-xs font-bold opacity-60">Delete guestbook messages</p>
         </Link>
       </div>
       

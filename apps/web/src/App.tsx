@@ -5,6 +5,7 @@ import Games from './pages/Games';
 import AdminIndex from './pages/Admin/Index';
 import AdminAnime from './pages/Admin/Anime';
 import AdminGames from './pages/Admin/Games';
+import AdminGuestbook from './pages/Admin/Guestbook';
 import ThemeToggle from './components/ThemeToggle';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/admin" element={<AdminIndex />} />
         <Route path="/admin/anime" element={<AdminAnime />} />
         <Route path="/admin/games" element={<AdminGames />} />
+        <Route path="/admin/guestbook" element={<AdminGuestbook />} />
       </Routes>
     </BrowserRouter>
   );

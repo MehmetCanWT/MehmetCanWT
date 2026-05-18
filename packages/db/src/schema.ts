@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+﻿import { pgTable, serial, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
 
 export const anime = pgTable('anime', {
   id: serial('id').primaryKey(),
@@ -24,3 +24,21 @@ export const adminConfig = pgTable('admin_config', {
   value: text('value').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const guestbook = pgTable('guestbook', {
+  id: serial('id').primaryKey(),
+  username: text('username').notNull(),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const dailyQuote = pgTable('daily_quote', {
+  id: text('id').primaryKey().default('global'),
+  quote: text('quote').notNull(),
+  character: text('character').notNull(),
+  anime: text('anime').notNull(),
+  characterImage: text('character_image'),
+  animeImage: text('anime_image'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+

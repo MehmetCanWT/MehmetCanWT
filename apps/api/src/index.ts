@@ -1,11 +1,13 @@
 import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { staticPlugin } from '@elysiajs/static';
-import { db, anime, games } from 'db';
-import { eq } from 'drizzle-orm';
+import { db, anime, games, guestbook } from 'db';
+import { eq, desc } from 'drizzle-orm';
 import { getAllAnime, getAnimeById } from './lib/anilist';
 import { getAllGames } from './lib/steam';
 import { getMixedNews } from './lib/news';
+import { getDiscordStatus } from './lib/discord';
+import { getDailyQuote } from './lib/quotes';
 import path from 'path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
@@ -56,6 +58,44 @@ const app = new Elysia()
   })
   .get('/api/news', async () => {
     return await getMixedNews();
+  })
+  .get('/api/discord', async () => {
+    return await getDiscordStatus('736294975760826438'); // You will need to replace this with your actual discord user ID if it's different.
+  })
+  .get('/api/quote', async () => {
+    return await getDailyQuote(false);
+  })
+  .get('/api/guestbook', async () => {
+    try {
+      return await db.select().from(guestbook).orderBy(desc(guestbook.createdAt)).limit(50);
+    } catch (e) {
+      console.error("DB Offline - cannot fetch guestbook");
+      return [];
+    }
+  })
+  .post('/api/guestbook', async ({ body }) => {
+    const { username, message } = body;
+    const BANNED_WORDS = ["kill", "death", "suicide", "nazi", "hitler", "racist", "terror", "bomb", "murder", "rape", "pedophile", "die"];
+    
+    if (!username || !message) return { error: "Username and message are required." };
+    if (username.length > 20) return { error: "Username too long." };
+    if (message.length > 100) return { error: "Message too long." };
+    
+    const lowerMessage = message.toLowerCase();
+    const isClean = !BANNED_WORDS.some(word => lowerMessage.includes(word));
+    if (!isClean) return { error: "Message contains restricted content. Keep it friendly!" };
+
+    try {
+      await db.insert(guestbook).values({ username, message });
+      return { success: true };
+    } catch (e) {
+      return { error: "Database is offline. Changes not saved." };
+    }
+  }, {
+    body: t.Object({
+      username: t.String(),
+      message: t.String()
+    })
   })
   .post('/api/admin/pin-anime', async ({ body }) => {
     const { id, isPinned, title } = body;
@@ -112,6 +152,27 @@ const app = new Elysia()
       isPinned: t.Boolean(),
       title: t.String()
     })
+  })
+  .post('/api/admin/guestbook/delete', async ({ body }) => {
+    const { id } = body;
+    try {
+      await db.delete(guestbook).where(eq(guestbook.id, id));
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: "Database is offline. Changes not saved." };
+    }
+  }, {
+    body: t.Object({
+      id: t.Number()
+    })
+  })
+  .post('/api/admin/quote/force-update', async () => {
+    try {
+      await getDailyQuote(true);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: "Update failed." };
+    }
   })
   .get('/api/og/readme', async ({ set }) => {
     try {
