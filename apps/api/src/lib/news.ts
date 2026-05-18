@@ -6,9 +6,7 @@
 export async function getMixedNews(): Promise<NewsItem[]> {
   try {
     // 1. Jikan API (MyAnimeList) for Anime News
-    const animeRes = await fetch("https://api.jikan.moe/v4/seasons/now", { 
-      next: { revalidate: 3600 } 
-    });
+    const animeRes = await fetch("https://api.jikan.moe/v4/seasons/now");
     const animeData = await animeRes.json();
     const animeNews = (animeData.data || []).slice(0, 5).map((a: any) => ({
       title: `NEW SEASON: ${a.title} HAS STARTED!`,

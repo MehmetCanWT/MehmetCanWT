@@ -1,4 +1,4 @@
-﻿import { Elysia, t } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { staticPlugin } from '@elysiajs/static';
 import { db, anime, games } from 'db';
@@ -7,8 +7,19 @@ import { getAllAnime, getAnimeById } from './lib/anilist';
 import { getAllGames } from './lib/steam';
 import { getMixedNews } from './lib/news';
 import path from 'path';
+import satori from 'satori';
+import { Resvg } from '@resvg/resvg-js';
+import React from 'react';
 
 const isProd = process.env.NODE_ENV === 'production';
+
+// Fetch font once on start (Safe fetch)
+let fontData: ArrayBuffer;
+try {
+  fontData = await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter-Black.ttf').then(res => res.arrayBuffer());
+} catch (e) {
+  console.warn("Could not fetch font for OG image, using fallback logic.");
+}
 
 const app = new Elysia()
   .use(cors({
@@ -16,41 +27,57 @@ const app = new Elysia()
     credentials: true
   }))
   .get('/api/anime', async () => {
-    const [allAnime, pinned] = await Promise.all([
-      getAllAnime('MehmetCanWT'),
-      db.select().from(anime).where(eq(anime.isPinned, true))
-    ]);
-    const pinnedIds = pinned.map(p => p.anilistId);
-    return { allAnime, pinnedIds };
+    try {
+      const [allAnime, pinned] = await Promise.all([
+        getAllAnime('MehmetCanWT'),
+        db.select().from(anime).where(eq(anime.isPinned, true)).catch(() => [])
+      ]);
+      const pinnedIds = Array.isArray(pinned) ? pinned.map(p => p.anilistId) : [];
+      return { allAnime, pinnedIds };
+    } catch (error) {
+      console.error("DB Offline, returning mock/public data only.");
+      const allAnime = await getAllAnime('MehmetCanWT');
+      return { allAnime, pinnedIds: [] };
+    }
   })
   .get('/api/games', async () => {
-    const [allGames, pinned] = await Promise.all([
-      getAllGames('76561198200466026'),
-      db.select().from(games).where(eq(games.isPinned, true))
-    ]);
-    const pinnedIds = pinned.map(p => p.steamId);
-    return { allGames, pinnedIds };
+    try {
+      const [allGames, pinned] = await Promise.all([
+        getAllGames('76561198200466026'),
+        db.select().from(games).where(eq(games.isPinned, true)).catch(() => [])
+      ]);
+      const pinnedIds = Array.isArray(pinned) ? pinned.map(p => p.steamId) : [];
+      return { allGames, pinnedIds };
+    } catch (error) {
+      console.error("DB Offline, returning mock/public data only.");
+      const allGames = await getAllGames('76561198200466026');
+      return { allGames, pinnedIds: [] };
+    }
   })
   .get('/api/news', async () => {
     return await getMixedNews();
   })
   .post('/api/admin/pin-anime', async ({ body }) => {
     const { id, isPinned, title } = body;
-    if (isPinned) {
-      await db.insert(anime).values({
-        anilistId: id,
-        title: title,
-        isPinned: true
-      }).onConflictDoUpdate({
-        target: anime.anilistId,
-        set: { isPinned: true }
-      });
-    } else {
-      await db.update(anime)
-        .set({ isPinned: false })
-        .where(eq(anime.anilistId, id));
+    try {
+      if (isPinned) {
+        await db.insert(anime).values({
+          anilistId: id,
+          title: title,
+          isPinned: true
+        }).onConflictDoUpdate({
+          target: anime.anilistId,
+          set: { isPinned: true }
+        });
+      } else {
+        await db.update(anime)
+          .set({ isPinned: false })
+          .where(eq(anime.anilistId, id));
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: "Database is offline. Changes not saved." };
     }
-    return { success: true };
   }, {
     body: t.Object({
       id: t.Number(),
@@ -60,27 +87,110 @@ const app = new Elysia()
   })
   .post('/api/admin/pin-game', async ({ body }) => {
     const { id, isPinned, title } = body;
-    if (isPinned) {
-      await db.insert(games).values({
-        steamId: id,
-        title: title,
-        isPinned: true
-      }).onConflictDoUpdate({
-        target: games.steamId,
-        set: { isPinned: true }
-      });
-    } else {
-      await db.update(games)
-        .set({ isPinned: false })
-        .where(eq(games.steamId, id));
+    try {
+      if (isPinned) {
+        await db.insert(games).values({
+          steamId: id,
+          title: title,
+          isPinned: true
+        }).onConflictDoUpdate({
+          target: games.steamId,
+          set: { isPinned: true }
+        });
+      } else {
+        await db.update(games)
+          .set({ isPinned: false })
+          .where(eq(games.steamId, id));
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: "Database is offline. Changes not saved." };
     }
-    return { success: true };
   }, {
     body: t.Object({
       id: t.Number(),
       isPinned: t.Boolean(),
       title: t.String()
     })
+  })
+  .get('/api/og/readme', async ({ set }) => {
+    try {
+      const [animes, allGames] = await Promise.all([
+        getAllAnime('MehmetCanWT'),
+        getAllGames('76561198200466026')
+      ]);
+
+      const favoriteAnime = await getAnimeById(21) || animes[0];
+      const topGame = [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0];
+      const gameImageUrl = topGame ? 'https://cdn.akamai.steamstatic.com/steam/apps/' + topGame.appid + '/header.jpg' : '';
+
+      if (!fontData) return new Response("Font not loaded");
+
+      const svg = await satori(
+        React.createElement('div', {
+          style: {
+            height: '100%',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#fff',
+            backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+            padding: '30px',
+            fontFamily: 'Inter',
+          }
+        }, [
+          React.createElement('div', { key: 'header', style: { display: 'flex', width: '100%', marginBottom: '15px' } }, [
+            React.createElement('div', { key: 'header-inner', style: { display: 'flex', backgroundColor: '#000', color: '#fff', padding: '8px 16px', fontSize: '28px', fontWeight: 900, fontStyle: 'italic', textTransform: 'uppercase' } }, 'MEHMETCANWT // LIVE ARCHIVE')
+          ]),
+          React.createElement('div', { key: 'anime', style: { display: 'flex', width: '100%', backgroundColor: '#fff', border: '4px solid #000', boxShadow: '6px 6px 0px #000', padding: '15px', marginBottom: '20px', alignItems: 'center' } }, [
+            React.createElement('div', { key: 'anime-img-box', style: { display: 'flex', width: '80px', height: '110px', border: '2px solid #000', marginRight: '20px', overflow: 'hidden' } }, [
+              React.createElement('img', { src: favoriteAnime?.coverImage.large, style: { width: '100%', height: '100%', objectFit: 'cover' } })
+            ]),
+            React.createElement('div', { key: 'anime-info', style: { display: 'flex', flexDirection: 'column', flex: 1 } }, [
+              React.createElement('div', { key: 'anime-label', style: { display: 'flex', backgroundColor: '#000', color: '#fff', padding: '2px 8px', fontSize: '12px', fontWeight: 'bold', alignSelf: 'flex-start', marginBottom: '5px' } }, 'FAVORITE ANIME'),
+              React.createElement('div', { key: 'anime-title', style: { display: 'flex', fontSize: '24px', fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', lineHeight: 1.1 } }, favoriteAnime?.title.english || favoriteAnime?.title.romaji || 'ONE PIECE'),
+              React.createElement('div', { key: 'anime-status', style: { display: 'flex', fontSize: '12px', fontWeight: 'bold', marginTop: '5px', color: '#666' } }, `STATUS: ${favoriteAnime?.status || 'COMPLETED'} // ${favoriteAnime?.averageScore}% SCORE`)
+            ])
+          ]),
+          React.createElement('div', { key: 'game', style: { display: 'flex', width: '100%', backgroundColor: '#fff', border: '4px solid #000', boxShadow: '6px 6px 0px #000', padding: '15px', alignItems: 'center' } }, [
+            React.createElement('div', { key: 'game-img-box', style: { display: 'flex', width: '140px', height: '80px', border: '2px solid #000', marginRight: '20px', overflow: 'hidden' } }, [
+              React.createElement('img', { src: gameImageUrl, style: { width: '100%', height: '100%', objectFit: 'cover' } })
+            ]),
+            React.createElement('div', { key: 'game-info', style: { display: 'flex', flexDirection: 'column', flex: 1 } }, [
+              React.createElement('div', { key: 'game-label', style: { display: 'flex', backgroundColor: '#000', color: '#fff', padding: '2px 8px', fontSize: '12px', fontWeight: 'bold', alignSelf: 'flex-start', marginBottom: '5px' } }, 'MOST PLAYED MISSION'),
+              React.createElement('div', { key: 'game-title', style: { display: 'flex', fontSize: '24px', fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', lineHeight: 1.1 } }, topGame?.name || 'COUNTER-STRIKE 2'),
+              React.createElement('div', { key: 'game-time', style: { display: 'flex', fontSize: '12px', fontWeight: 'bold', marginTop: '5px', color: '#666' } }, `TOTAL OPERATION TIME: ${(topGame?.playtime_forever / 60 || 0).toFixed(0)} HOURS`)
+            ])
+          ]),
+          React.createElement('div', { key: 'footer', style: { display: 'flex', marginTop: '15px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.5 } }, 'SYNCED WITH VDS NODE 01 // MEHMETCANWT.XYZ')
+        ]),
+        {
+          width: 800,
+          height: 500,
+          fonts: [
+            {
+              name: 'Inter',
+              data: fontData,
+              weight: 900,
+              style: 'normal',
+            },
+          ],
+        }
+      );
+
+      const resvg = new Resvg(svg);
+      const pngData = resvg.render();
+      const pngBuffer = pngData.asPng();
+
+      set.headers['content-type'] = 'image/png';
+      return pngBuffer;
+    } catch (e) {
+      set.headers['content-type'] = 'text/plain';
+      return "OG Generation failed - likely DB offline";
+    }
   });
 
 // Production mode: Serve static UI files
@@ -97,6 +207,6 @@ if (isProd) {
 
 app.listen(isProd ? 3000 : 3001);
 
-console.log(\🚀 Elysia is running in \ mode at \:\\);
+console.log(`🚀 Elysia is running in ${isProd ? 'PRODUCTION' : 'DEVELOPMENT'} mode at ${app.server?.hostname}:${app.server?.port}`);
 
 export type App = typeof app;

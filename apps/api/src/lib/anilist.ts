@@ -52,7 +52,6 @@ export async function getAllAnime(userName: string): Promise<AnimeEntry[]> {
         query,
         variables: { userName },
       }),
-      next: { revalidate: 3600 },
     });
 
     const data = await response.json();
