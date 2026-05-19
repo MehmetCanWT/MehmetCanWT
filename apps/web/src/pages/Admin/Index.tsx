@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, Gamepad2, ShieldCheck, MessageSquare, LogOut } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Gamepad2, ShieldCheck, MessageSquare, LogOut, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
+import { apiPost } from '../../lib/api';
 
 export default function AdminIndex() {
   const { isAuth, setAuth, logout } = useStore();
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   const handleAuth = async () => {
     if (!pass.trim()) return;
@@ -33,6 +35,13 @@ export default function AdminIndex() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForceQuote = async () => {
+    setQuoteLoading(true);
+    await apiPost('/api/admin/quote/force-update', {});
+    setQuoteLoading(false);
+    alert("New quote fetched and saved!");
   };
 
   if (!isAuth) {
@@ -99,11 +108,17 @@ export default function AdminIndex() {
           <p className="text-xs font-bold opacity-60">Pin and reorder missions</p>
         </Link>
 
-        <Link to="/admin/guestbook" className="md:col-span-2 manga-panel group hover:bg-black hover:text-white transition-all p-12 flex flex-col items-center justify-center space-y-4">
+        <Link to="/admin/guestbook" className="manga-panel group hover:bg-black hover:text-white transition-all p-12 flex flex-col items-center justify-center space-y-4">
           <MessageSquare size={64} className="group-hover:scale-110 transition-transform" />
           <span className="text-3xl font-black uppercase italic">Manage Logs</span>
           <p className="text-xs font-bold opacity-60">Delete guestbook messages</p>
         </Link>
+
+        <button onClick={handleForceQuote} disabled={quoteLoading} className="manga-panel group hover:bg-black hover:text-white transition-all p-12 flex flex-col items-center justify-center space-y-4 disabled:opacity-50">
+          <Quote size={64} className={quoteLoading ? "animate-spin" : "group-hover:scale-110 transition-transform"} />
+          <span className="text-3xl font-black uppercase italic">{quoteLoading ? "Fetching..." : "New Quote"}</span>
+          <p className="text-xs font-bold opacity-60">Force fetch a new daily quote</p>
+        </button>
       </div>
       
       <div className="manga-panel bg-zinc-900 text-white text-center py-4 text-xs font-black uppercase tracking-widest">
