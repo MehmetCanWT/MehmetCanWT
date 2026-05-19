@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BookOpen, ArrowLeft, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/eden';
+import SEO from '../components/SEO';
 
 export default function Anime() {
   const [data, setData] = useState<any>(null);
@@ -27,6 +28,7 @@ export default function Anime() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
+      <SEO title="Anime Archive // MehmetCanWT" description="Personal anime tracking and reviews." url="https://mehmetcanwt.xyz/anime" />
       <header className="flex justify-between items-center">
         <Link to="/" className="manga-panel flex items-center gap-2 font-black uppercase hover:bg-black hover:text-white transition-all py-2 px-4">
           <ArrowLeft size={20} /> Back

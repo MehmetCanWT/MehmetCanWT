@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { BookOpen, Gamepad2, MessageSquare, Radio, Quote } from 'lucide-react';
+import { BookOpen, Gamepad2, MessageSquare, Radio, Quote, Terminal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/eden';
 import GuestbookForm from '../components/GuestbookForm';
+import SEO from '../components/SEO';
 
 export default function Home() {
   const [data, setData] = useState<any>(null);
@@ -92,6 +93,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-32">
+      <SEO />
       {/* Header Panel */}
       <header className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 manga-panel flex flex-col justify-center items-center xl:items-start text-center xl:text-left overflow-hidden">
@@ -112,8 +114,11 @@ export default function Home() {
            <Link to="/anime" className="text-xl sm:text-2xl font-black italic uppercase hover:text-purple-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-white/20 pb-2">
              <BookOpen size={20} /> Anime List
            </Link>
-           <Link to="/games" className="text-xl sm:text-2xl font-black italic uppercase hover:text-pink-400 transition-colors flex items-center gap-2 w-full justify-center">
+           <Link to="/games" className="text-xl sm:text-2xl font-black italic uppercase hover:text-pink-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-white/20 pb-2">
              <Gamepad2 size={20} /> Game Vault
+           </Link>
+           <Link to="/code" className="text-xl sm:text-2xl font-black italic uppercase hover:text-green-400 transition-colors flex items-center gap-2 w-full justify-center">
+             <Terminal size={20} /> Code Vault
            </Link>
         </nav>
       </header>
