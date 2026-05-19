@@ -276,7 +276,7 @@ export default function Home() {
               <Radio size={20} className="animate-pulse" /> LIVE TELEMETRY
             </div>
             <div className="manga-panel bg-zinc-50">
-              {discord ? (
+              {discord && discord.discord_user ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 border-b-4 border-black pb-4">
                     <div className="relative flex-shrink-0">
@@ -299,7 +299,7 @@ export default function Home() {
                   </div>
 
                   {/* Activity Detail */}
-                  {discord.activities.filter((a: any) => a.type !== 4).map((activity: any, i: number) => (
+                  {(discord.activities || []).filter((a: any) => a.type !== 4).map((activity: any, i: number) => (
                     <div key={i} className="bg-white border-2 border-black p-3 space-y-2">
                       <p className="text-[10px] font-black bg-black text-white inline-block px-1 italic uppercase">
                         {activity.type === 0 ? 'PLAYING' : activity.type === 2 ? 'LISTENING' : 'ACTIVITY'}
@@ -343,7 +343,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  {!discord.activities.some((a: any) => a.type !== 4) && !discord.spotify && (
+                  {!(discord.activities || []).some((a: any) => a.type !== 4) && !discord.spotify && (
                     <p className="text-xs font-bold italic text-gray-400 uppercase text-center py-4">NO ACTIVE TRANSMISSIONS FOUND</p>
                   )}
                 </div>
@@ -376,7 +376,7 @@ export default function Home() {
           BREAKING NEWS
         </div>
         <div className="flex whitespace-nowrap animate-manga-scroll text-white font-bold tracking-tight text-xl uppercase items-center">
-          {news.map((item: any, i: number) => (
+          {(Array.isArray(news) ? news : []).map((item: any, i: number) => (
             <span key={i} className="mx-8 flex items-center gap-2">
               <span className="text-red-500 font-black">●</span>
               {item.title} 
@@ -384,7 +384,7 @@ export default function Home() {
             </span>
           ))}
           {/* Loop for infinite feel */}
-          {news.map((item: any, i: number) => (
+          {(Array.isArray(news) ? news : []).map((item: any, i: number) => (
             <span key={`loop-${i}`} className="mx-8 flex items-center gap-2">
               <span className="text-red-500 font-black">●</span>
               {item.title} 
