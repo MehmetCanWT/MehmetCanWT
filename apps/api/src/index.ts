@@ -2,12 +2,12 @@ import { Elysia, t } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { staticPlugin } from '@elysiajs/static';
 import { jwt } from '@elysia/jwt';
+import { swagger } from '@elysiajs/swagger';
 import { db, anime, games, guestbook } from 'db';
 import { eq, desc } from 'drizzle-orm';
 import { getAllAnime, getAnimeById } from './lib/anilist';
 import { getAllGames } from './lib/steam';
 import { getMixedNews } from './lib/news';
-import { getDiscordStatus } from './lib/discord';
 import { getDailyQuote } from './lib/quotes';
 import path from 'path';
 import satori from 'satori';
@@ -17,7 +17,6 @@ import { timingSafeEqual } from 'crypto';
 
 const isProd = process.env.NODE_ENV === 'production';
 const STEAM_ID = process.env.STEAM_ID || '76561198200466026';
-const DISCORD_ID = process.env.DISCORD_ID || '736294975760826438';
 
 if (isProd && !process.env.JWT_SECRET) {
   console.error("FATAL: JWT_SECRET is not set in production!");
@@ -33,34 +32,30 @@ try {
   console.warn("Could not fetch font for OG image, using fallback logic.");
 }
 
-// --- Rate limiter for guestbook ---
+// --- Rate limiter for guestbook and login ---
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 5; // 5 requests per minute
 
-function checkRateLimit(ip: string): boolean {
-  // Prevent memory leak from unbounded Map size
-  if (rateLimitMap.size > 10000) {
-    rateLimitMap.clear();
-  }
+function checkRateLimit(ip: string, customLimit?: number, customWindow?: number): boolean {
+  if (rateLimitMap.size > 10000) rateLimitMap.clear();
 
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
+  const limit = customLimit || RATE_LIMIT_MAX;
+  const window = customWindow || RATE_LIMIT_WINDOW;
 
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    rateLimitMap.set(ip, { count: 1, resetAt: now + window });
     return true;
   }
 
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
+  if (entry.count >= limit) return false;
 
   entry.count++;
   return true;
 }
 
-// Cleanup stale entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of rateLimitMap) {
@@ -69,10 +64,24 @@ setInterval(() => {
 }, 5 * 60_000);
 
 const app = new Elysia()
+  // Add API Documentation
+  .use(swagger({
+    path: '/swagger',
+    documentation: {
+      info: { title: 'MehmetCanWT API', version: '1.0.0' }
+    }
+  }))
   .use(cors({
     origin: isProd ? [/^https:\/\/(www\.)?mehmetcanwt\.xyz$/] : true,
     credentials: true
   }))
+  // Security Headers Middleware
+  .onRequest(({ set }) => {
+    set.headers['X-Content-Type-Options'] = 'nosniff';
+    set.headers['X-Frame-Options'] = 'DENY';
+    set.headers['X-XSS-Protection'] = '1; mode=block';
+    set.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin';
+  })
   .use(
     jwt({
       name: 'jwt',
@@ -114,9 +123,6 @@ const app = new Elysia()
   })
   .get('/api/news', async () => {
     return await getMixedNews();
-  })
-  .get('/api/discord', async () => {
-    return await getDiscordStatus(DISCORD_ID);
   })
   .get('/api/quote', async () => {
     return await getDailyQuote(false);
@@ -170,7 +176,16 @@ const app = new Elysia()
   })
 
   // --- Auth endpoint ---
-  .post('/api/admin/login', async ({ body, jwt, set }) => {
+  .post('/api/admin/login', async ({ body, jwt, set, cookie: { auth }, request }) => {
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown');
+    
+    // Strict rate limit for login: max 5 attempts per 15 minutes
+    if (!checkRateLimit(`login_${ip}`, 5, 15 * 60 * 1000)) {
+      set.status = 429;
+      return { error: "Too many login attempts. Blocked for 15 minutes." };
+    }
+
     const adminPassword = process.env.ADMIN_PASSWORD;
     if (!adminPassword) {
       set.status = 500;
@@ -187,24 +202,35 @@ const app = new Elysia()
     }
 
     const token = await jwt.sign({ role: 'admin' });
-    return { success: true, token };
+    auth.set({
+      value: token,
+      httpOnly: true,
+      secure: isProd,
+      path: '/',
+      maxAge: 86400 // 24 hours
+    });
+
+    return { success: true };
   }, {
     body: t.Object({
       password: t.String()
     })
   })
+  .post('/api/admin/logout', async ({ cookie: { auth } }) => {
+    auth.remove();
+    return { success: true };
+  })
 
   // --- Protected admin routes ---
   .guard({
-    beforeHandle: async ({ jwt, set, request }) => {
-      const authHeader = request.headers.get('authorization');
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    beforeHandle: async ({ jwt, set, cookie: { auth } }) => {
+      const token = auth.value;
+      if (!token) {
         set.status = 401;
         return { error: "Unauthorized" };
       }
 
-      const token = authHeader.replace('Bearer ', '');
-      const payload = await jwt.verify(token);
+      const payload = await jwt.verify(token as string);
 
       if (!payload || payload.role !== 'admin') {
         set.status = 401;

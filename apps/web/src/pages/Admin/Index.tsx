@@ -25,8 +25,8 @@ export default function AdminIndex() {
 
       const data = await res.json();
 
-      if (res.ok && data.success && data.token) {
-        setAuth(true, data.token);
+      if (res.ok && data.success) {
+        setAuth(true);
       } else {
         setError(data.error || "Authentication failed.");
       }

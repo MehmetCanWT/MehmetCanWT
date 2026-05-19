@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { BookOpen, Gamepad2, MessageSquare, Radio, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/eden';
@@ -6,6 +6,10 @@ import GuestbookForm from '../components/GuestbookForm';
 
 export default function Home() {
   const [data, setData] = useState<any>(null);
+  const [discordData, setDiscordData] = useState<any>(null);
+  const DISCORD_ID = "736294975760826438"; // Hardcoded from previous ENV reference
+  const wsRef = useRef<WebSocket | null>(null);
+  const heartbeatIntervalRef = useRef<any>(null);
 
   const fetchGuestbook = async () => {
     const guestbookRes = await api.api.guestbook.get();
@@ -13,12 +17,12 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Initial data fetch (excluding discord)
     async function fetchData() {
-      const [animeRes, gameRes, newsRes, discordRes, guestbookRes, quoteRes] = await Promise.all([
+      const [animeRes, gameRes, newsRes, guestbookRes, quoteRes] = await Promise.all([
         api.api.anime.get(),
         api.api.games.get(),
         api.api.news.get(),
-        api.api.discord.get(),
         api.api.guestbook.get(),
         api.api.quote.get()
       ]);
@@ -27,17 +31,56 @@ export default function Home() {
         favoriteAnime: animeRes.data?.allAnime.find((a: any) => a.id === 21) || animeRes.data?.allAnime[0],
         topGame: [...(gameRes.data?.allGames || [])].sort((a: any, b: any) => b.playtime_forever - a.playtime_forever)[0],
         news: newsRes.data || [],
-        discord: discordRes.data,
         guestbook: guestbookRes.data || [],
         dailyQuote: quoteRes.data || { quote: "Loading...", character: "System", anime: "Archive" }
       });
     }
     fetchData();
+
+    // Lanyard WebSocket setup
+    const connectLanyard = () => {
+      const ws = new WebSocket('wss://api.lanyard.rest/socket');
+      wsRef.current = ws;
+
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+
+        if (msg.op === 1) { // Hello
+          const interval = msg.d.heartbeat_interval;
+          ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: DISCORD_ID } }));
+          
+          if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
+          heartbeatIntervalRef.current = setInterval(() => {
+            ws.send(JSON.stringify({ op: 3 }));
+          }, interval);
+        }
+
+        if (msg.op === 0) { // Event
+          if (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE') {
+            setDiscordData(msg.d);
+          }
+        }
+      };
+
+      ws.onclose = () => {
+        if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
+        // Reconnect after 3 seconds
+        setTimeout(connectLanyard, 3000);
+      };
+    };
+
+    connectLanyard();
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
+    };
   }, []);
 
   if (!data) return <div className="min-h-screen flex items-center justify-center font-black uppercase italic text-4xl animate-pulse">Initializing System...</div>;
 
-  const { favoriteAnime, topGame, news, discord, guestbook, dailyQuote } = data;
+  const { favoriteAnime, topGame, news, guestbook, dailyQuote } = data;
+  const discord = discordData;
 
   const birthDate = new Date("2004-10-03");
   const today = new Date();
