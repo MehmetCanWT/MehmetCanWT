@@ -20,7 +20,8 @@ export default function Code() {
         </div>
       </header>
 
-      <div className="manga-panel flex flex-col items-center justify-center py-32 space-y-8 bg-zinc-50 halftone relative">
+      <div className="manga-panel flex flex-col items-center justify-center py-32 space-y-8 bg-zinc-50 relative overflow-hidden">
+        <div className="absolute inset-0 halftone opacity-10"></div>
         <div className="relative z-10 text-7xl sm:text-9xl font-black">
           ฅ/ᐠ. ̫ .ᐟ\ฅ
         </div>
