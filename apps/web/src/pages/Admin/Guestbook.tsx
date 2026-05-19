@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Trash2, MessageSquare } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-import { api } from '../../lib/eden';
 import { useStore } from '../../store/useStore';
+import { apiGet, apiPost } from '../../lib/api';
 
 export default function AdminGuestbook() {
   const { isAuth } = useStore();
@@ -11,9 +11,9 @@ export default function AdminGuestbook() {
 
   const fetchData = async () => {
     setLoading(true);
-    const res = await api.api.guestbook.get();
-    if (res.data && Array.isArray(res.data)) {
-      setEntries(res.data);
+    const res = await apiGet('/api/guestbook');
+    if (res && Array.isArray(res)) {
+      setEntries(res);
     }
     setLoading(false);
   };
@@ -23,7 +23,7 @@ export default function AdminGuestbook() {
   }, [isAuth]);
 
   const handleDelete = async (id: string) => {
-    await api.api.admin.guestbook.delete.post({ id: Number(id) });
+    await apiPost('/api/admin/guestbook/delete', { id: Number(id) });
     fetchData();
   };
 

@@ -52,8 +52,8 @@ export default function Home() {
       {/* Header Panel */}
       <header className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 manga-panel flex flex-col justify-center items-center xl:items-start text-center xl:text-left overflow-hidden">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-7xl xl:text-8xl font-black italic tracking-tighter uppercase leading-none break-words w-full">
-            Mehmet<span className="bg-black text-white px-2 ml-1">Can</span>WT
+          <h1 className="text-[14vw] sm:text-[10vw] md:text-7xl lg:text-8xl font-black italic tracking-tighter uppercase leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+            Mehmet<span className="bg-black text-white px-1 sm:px-2 ml-1">Can</span>WT
           </h1>
           <div className="mt-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 border-t-4 border-black pt-2 w-full justify-center xl:justify-start">
             <p className="text-lg sm:text-xl font-bold uppercase tracking-widest text-center">

@@ -3,9 +3,10 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --env-file=../../.env --watch src/index.ts"
   },
   "dependencies": {
+    "@elysia/jwt": "^1.4.2",
     "@elysiajs/cors": "^1.4.2",
     "@elysiajs/static": "^1.4.10",
     "@resvg/resvg-js": "^2.6.2",

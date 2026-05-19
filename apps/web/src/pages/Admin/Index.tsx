@@ -1,15 +1,37 @@
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, Gamepad2, ShieldCheck, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Gamepad2, ShieldCheck, MessageSquare, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 
 export default function AdminIndex() {
-  const { isAuth, setAuth } = useStore();
+  const { isAuth, setAuth, logout } = useStore();
   const [pass, setPass] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleAuth = () => {
-    if (pass === "159753") {
-      setAuth(true);
+  const handleAuth = async () => {
+    if (!pass.trim()) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.token) {
+        setAuth(true, data.token);
+      } else {
+        setError(data.error || "Authentication failed.");
+      }
+    } catch (e) {
+      setError("Connection error. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -21,6 +43,11 @@ export default function AdminIndex() {
             <ShieldCheck size={64} />
           </div>
           <h1 className="manga-title text-2xl w-full text-center">ADMIN ACCESS</h1>
+          {error && (
+            <div className="bg-red-100 border-4 border-red-600 p-3 text-red-700 font-black uppercase text-sm text-center">
+              {error}
+            </div>
+          )}
           <input 
             type="password" 
             placeholder="ACCESS CODE" 
@@ -28,12 +55,14 @@ export default function AdminIndex() {
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+            disabled={loading}
           />
           <button 
             onClick={handleAuth}
-            className="w-full bg-black text-white p-3 font-black uppercase hover:bg-zinc-800 transition-colors"
+            disabled={loading}
+            className="w-full bg-black text-white p-3 font-black uppercase hover:bg-zinc-800 transition-colors disabled:opacity-50"
           >
-            Authenticate
+            {loading ? "Authenticating..." : "Authenticate"}
           </button>
         </div>
       </div>
@@ -46,7 +75,15 @@ export default function AdminIndex() {
         <Link to="/" className="manga-panel flex items-center gap-2 font-black uppercase py-2 px-4 hover:bg-black hover:text-white transition-all">
           <LayoutDashboard size={20} /> Home
         </Link>
-        <div className="manga-title text-3xl italic uppercase">Admin Terminal</div>
+        <div className="flex items-center gap-4">
+          <div className="manga-title text-3xl italic uppercase">Admin Terminal</div>
+          <button
+            onClick={logout}
+            className="manga-panel flex items-center gap-2 font-black uppercase py-2 px-4 text-red-600 hover:bg-red-600 hover:text-white transition-all"
+          >
+            <LogOut size={20} /> Logout
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

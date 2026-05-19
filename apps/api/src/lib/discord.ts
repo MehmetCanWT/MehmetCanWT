@@ -48,17 +48,15 @@ export interface LanyardData {
 export async function getDiscordStatus(userId: string): Promise<LanyardData | null> {
   return withCache(`discord-${userId}`, 30, async () => {
     try {
-      const response = await fetch(`https://api.lanyard.rest/v1/users/${userId}`, {
-        headers: {
-          Authorization: process.env.LANYARD_API_KEY || "",
-        }
-      });
+      const response = await fetch(`https://api.lanyard.rest/v1/users/${userId}`);
       const json = await response.json();
       if (json.success) {
         return json.data;
       }
+      console.error("Lanyard Error:", json);
       return null;
-    } catch {
+    } catch (error) {
+      console.error("Lanyard Fetch Error:", error);
       return null;
     }
   });

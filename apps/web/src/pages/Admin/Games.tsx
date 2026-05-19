@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Star, StarOff, Search } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-import { api } from '../../lib/eden';
 import { useStore } from '../../store/useStore';
+import { apiGet, apiPost } from '../../lib/api';
 
 export default function AdminGames() {
   const { isAuth } = useStore();
@@ -11,9 +11,9 @@ export default function AdminGames() {
 
   useEffect(() => {
     async function fetchData() {
-      const res = await api.api.games.get();
-      if (res.data) {
-        setData(res.data);
+      const res = await apiGet('/api/games');
+      if (res) {
+        setData(res);
       }
     }
     if (isAuth) fetchData();
@@ -30,7 +30,7 @@ export default function AdminGames() {
     
     setData({ ...data, pinnedIds: newPinned });
 
-    await api.api.admin['pin-game'].post({ id, isPinned, title });
+    await apiPost('/api/admin/pin-game', { id, isPinned, title });
   };
 
   if (!isAuth) return <Navigate to="/admin" />;

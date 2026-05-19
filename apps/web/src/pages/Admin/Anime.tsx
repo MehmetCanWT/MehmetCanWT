@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Star, StarOff, Search } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-import { api } from '../../lib/eden';
 import { useStore } from '../../store/useStore';
+import { apiGet, apiPost } from '../../lib/api';
 
 export default function AdminAnime() {
   const { isAuth } = useStore();
@@ -11,9 +11,9 @@ export default function AdminAnime() {
 
   useEffect(() => {
     async function fetchData() {
-      const res = await api.api.anime.get();
-      if (res.data) {
-        setData(res.data);
+      const res = await apiGet('/api/anime');
+      if (res) {
+        setData(res);
       }
     }
     if (isAuth) fetchData();
@@ -30,7 +30,7 @@ export default function AdminAnime() {
     
     setData({ ...data, pinnedIds: newPinned });
 
-    await api.api.admin['pin-anime'].post({ id, isPinned, title });
+    await apiPost('/api/admin/pin-anime', { id, isPinned, title });
   };
 
   if (!isAuth) return <Navigate to="/admin" />;

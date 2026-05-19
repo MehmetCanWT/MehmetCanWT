@@ -10,8 +10,10 @@ if (connectionString) {
   try {
     const pool = new Pool({ connectionString });
     dbInstance = drizzle(pool, { schema });
+    console.log("✅ Database pool initialized successfully.");
   } catch (e) {
-    console.warn("⚠️ Failed to initialize database pool. Running in OFFLINE mode.");
+    console.error("❌ Failed to initialize database pool:", e);
+    console.warn("⚠️ Running in OFFLINE mode.");
   }
 } else {
   console.warn("⚠️ No DATABASE_URL provided. Running in OFFLINE mode.");

@@ -14,6 +14,7 @@ export interface AnimeEntry {
   userScore: number;
   progress: number;
   isPinned?: boolean;
+  description?: string;
 }
 
 const query = `
@@ -32,6 +33,7 @@ query ($userName: String) {
             large
           }
           averageScore
+          description(asHtml: false)
         }
         status
         progress
@@ -72,6 +74,7 @@ export async function getAllAnime(userName: string): Promise<AnimeEntry[]> {
             averageScore: entry.media.averageScore,
             userScore: entry.score || 0,
             progress: entry.progress,
+            description: entry.media.description, // Added description
           });
         });
       });
@@ -114,6 +117,7 @@ export async function getAnimeById(id: number): Promise<AnimeEntry | null> {
             large
           }
           averageScore
+          description(asHtml: false)
         }
       }
     `;
@@ -133,7 +137,8 @@ export async function getAnimeById(id: number): Promise<AnimeEntry | null> {
         status: "COMPLETED",
         averageScore: media.averageScore,
         userScore: 0,
-        progress: 0
+        progress: 0,
+        description: media.description
       };
     } catch (error) {
       return null;
