@@ -42,8 +42,8 @@ export default function Anime() {
             <div className="relative z-10 flex flex-col h-full">
               <div className="relative aspect-[3/4] border-2 border-black mb-4 overflow-hidden bg-black">
                 <img 
-                  src={anime.coverImage.large} 
-                  alt={anime.title.english}
+                  loading="lazy"
+                  src={anime.coverImage.large}                  alt={anime.title.english}
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                 />
                 {data.pinnedIds.includes(anime.id) && (

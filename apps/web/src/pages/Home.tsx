@@ -160,6 +160,7 @@ export default function Home() {
                     <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                       <div className="w-full sm:w-1/2 aspect-video border-4 border-black overflow-hidden bg-black shrink-0 relative">
                         <img
+                          loading="lazy"
                           src={`https://cdn.akamai.steamstatic.com/steam/apps/${topGame.appid}/header.jpg`}
                           alt={topGame.name}
                           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"

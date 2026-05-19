@@ -42,8 +42,8 @@ export default function Games() {
             <div className="relative z-10 flex flex-col h-full">
               <div className="relative aspect-video border-2 border-black mb-4 overflow-hidden bg-black">
                 <img 
-                  src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`} 
-                  alt={game.name}
+                  loading="lazy"
+                  src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`}                  alt={game.name}
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                 />
                 {data.pinnedIds.includes(game.appid) && (
