@@ -13,14 +13,17 @@ import path from 'path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import React from 'react';
-import { timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 
 const isProd = process.env.NODE_ENV === 'production';
 const STEAM_ID = process.env.STEAM_ID || '76561198200466026';
 
-if (isProd && !process.env.JWT_SECRET) {
-  console.error("FATAL: JWT_SECRET is not set in production!");
-  process.exit(1);
+if (!process.env.JWT_SECRET) {
+  if (isProd) {
+    console.error("FATAL: JWT_SECRET is not set in production!");
+    process.exit(1);
+  }
+  console.warn("⚠️ JWT_SECRET not set. Using insecure dev fallback.");
 }
 const JWT_SECRET_KEY = process.env.JWT_SECRET || 'fallback_dev_secret_change_me';
 
@@ -36,9 +39,25 @@ try {
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 5; // 5 requests per minute
+const MAX_RATE_LIMIT_ENTRIES = 5000;
 
 function checkRateLimit(ip: string, customLimit?: number, customWindow?: number): boolean {
-  if (rateLimitMap.size > 10000) rateLimitMap.clear();
+  // LRU eviction instead of nuclear clear
+  if (rateLimitMap.size > MAX_RATE_LIMIT_ENTRIES) {
+    const now = Date.now();
+    // First pass: remove expired entries
+    for (const [key, entry] of rateLimitMap) {
+      if (now > entry.resetAt) rateLimitMap.delete(key);
+    }
+    // If still too big, remove oldest entries
+    if (rateLimitMap.size > MAX_RATE_LIMIT_ENTRIES) {
+      const entries = [...rateLimitMap.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
+      const toRemove = entries.length - MAX_RATE_LIMIT_ENTRIES;
+      for (let i = 0; i < toRemove; i++) {
+        rateLimitMap.delete(entries[i][0]);
+      }
+    }
+  }
 
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
@@ -56,12 +75,69 @@ function checkRateLimit(ip: string, customLimit?: number, customWindow?: number)
   return true;
 }
 
+// Periodic cleanup of expired entries
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of rateLimitMap) {
     if (now > entry.resetAt) rateLimitMap.delete(ip);
   }
 }, 5 * 60_000);
+
+// --- Helpers ---
+function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  return forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown');
+}
+
+function stripHtml(str: string): string {
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
+interface PinBody {
+  id: number;
+  isPinned: boolean;
+  title: string;
+}
+
+async function pinEntity(
+  table: typeof anime | typeof games,
+  idField: typeof anime.anilistId | typeof games.steamId,
+  body: PinBody
+) {
+  if (!db) {
+    return { success: false, error: "Database is offline. Changes not saved." };
+  }
+  try {
+    if (body.isPinned) {
+      await db.insert(table).values({
+        [idField.name]: body.id,
+        title: body.title,
+        isPinned: true
+      } as any).onConflictDoUpdate({
+        target: idField,
+        set: { isPinned: true }
+      });
+    } else {
+      await db.update(table)
+        .set({ isPinned: false })
+        .where(eq(idField, body.id));
+    }
+    return { success: true };
+  } catch (e) {
+    console.error(`Pin entity error:`, e);
+    return { success: false, error: "Database error. Changes not saved." };
+  }
+}
+
+async function withDb<T>(fallback: T, fn: () => Promise<T>): Promise<T> {
+  if (!db) return fallback;
+  try {
+    return await fn();
+  } catch (e) {
+    console.error("DB Error:", e);
+    return fallback;
+  }
+}
 
 const app = new Elysia()
   // Add API Documentation
@@ -92,34 +168,20 @@ const app = new Elysia()
 
   // --- Public routes ---
   .get('/api/anime', async () => {
-    try {
-      const allAnime = await getAllAnime('MehmetCanWT');
-      let pinned: any[] = [];
-      if (db) {
-        pinned = await db.select().from(anime).where(eq(anime.isPinned, true)).catch(() => []);
-      }
-      const pinnedIds = Array.isArray(pinned) ? pinned.map(p => p.anilistId) : [];
-      return { allAnime, pinnedIds };
-    } catch (error) {
-      console.error("DB Offline, returning mock/public data only.");
-      const allAnime = await getAllAnime('MehmetCanWT');
-      return { allAnime, pinnedIds: [] };
-    }
+    const allAnime = await getAllAnime('MehmetCanWT');
+    const pinned = await withDb([] as { anilistId: number }[], () =>
+      db!.select().from(anime).where(eq(anime.isPinned, true))
+    );
+    const pinnedIds = pinned.map(p => p.anilistId);
+    return { allAnime, pinnedIds };
   })
   .get('/api/games', async () => {
-    try {
-      const allGames = await getAllGames(STEAM_ID);
-      let pinned: any[] = [];
-      if (db) {
-        pinned = await db.select().from(games).where(eq(games.isPinned, true)).catch(() => []);
-      }
-      const pinnedIds = Array.isArray(pinned) ? pinned.map(p => p.steamId) : [];
-      return { allGames, pinnedIds };
-    } catch (error) {
-      console.error("DB Offline, returning mock/public data only.");
-      const allGames = await getAllGames(STEAM_ID);
-      return { allGames, pinnedIds: [] };
-    }
+    const allGames = await getAllGames(STEAM_ID);
+    const pinned = await withDb([] as { steamId: number }[], () =>
+      db!.select().from(games).where(eq(games.isPinned, true))
+    );
+    const pinnedIds = pinned.map(p => p.steamId);
+    return { allGames, pinnedIds };
   })
   .get('/api/news', async () => {
     return await getMixedNews();
@@ -128,46 +190,47 @@ const app = new Elysia()
     return await getDailyQuote(false);
   })
   .get('/api/guestbook', async () => {
-    try {
-      if (db) {
-        return await db.select().from(guestbook).orderBy(desc(guestbook.createdAt)).limit(50);
-      }
-      return [];
-    } catch (e) {
-      console.error("DB Offline - cannot fetch guestbook");
-      return [];
-    }
+    return await withDb([], () =>
+      db!.select().from(guestbook).orderBy(desc(guestbook.createdAt)).limit(50)
+    );
   })
   .post('/api/guestbook', async ({ body, request, set }) => {
-    // Rate limit check with IP spoofing protection (taking the first client IP)
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown');
+    const ip = getClientIp(request);
     
     if (!checkRateLimit(ip)) {
       set.status = 429;
       return { error: "Too many requests. Please wait a minute." };
     }
 
-    const { username, message } = body;
+    const username = stripHtml(body.username);
+    const message = stripHtml(body.message);
+    
     const BANNED_WORDS = ["kill", "death", "suicide", "nazi", "hitler", "racist", "terror", "bomb", "murder", "rape", "pedophile", "die"];
     
-    if (!username || !message) return { error: "Username and message are required." };
-    if (username.length > 20) return { error: "Username too long." };
-    if (message.length > 100) return { error: "Message too long." };
+    if (!username || !message) {
+      set.status = 400;
+      return { error: "Username and message are required." };
+    }
+    if (username.length > 20) {
+      set.status = 400;
+      return { error: "Username too long." };
+    }
+    if (message.length > 100) {
+      set.status = 400;
+      return { error: "Message too long." };
+    }
     
     const lowerMessage = message.toLowerCase();
     const isClean = !BANNED_WORDS.some(word => lowerMessage.includes(word));
-    if (!isClean) return { error: "Message contains restricted content. Keep it friendly!" };
-
-    try {
-      if (db) {
-        await db.insert(guestbook).values({ username, message });
-        return { success: true };
-      }
-      return { error: "Database is offline. Changes not saved." };
-    } catch (e) {
-      return { error: "Database is offline. Changes not saved." };
+    if (!isClean) {
+      set.status = 400;
+      return { error: "Message contains restricted content. Keep it friendly!" };
     }
+
+    return await withDb({ error: "Database is offline. Changes not saved." }, async () => {
+      await db!.insert(guestbook).values({ username, message });
+      return { success: true };
+    });
   }, {
     body: t.Object({
       username: t.String(),
@@ -175,10 +238,9 @@ const app = new Elysia()
     })
   })
 
-  // --- Auth endpoint ---
+  // --- Auth endpoints ---
   .post('/api/admin/login', async ({ body, jwt, set, cookie: { auth }, request }) => {
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : (request.headers.get('x-real-ip') || 'unknown');
+    const ip = getClientIp(request);
     
     // Strict rate limit for login: max 5 attempts per 15 minutes
     if (!checkRateLimit(`login_${ip}`, 5, 15 * 60 * 1000)) {
@@ -192,11 +254,12 @@ const app = new Elysia()
       return { error: "Server auth not configured." };
     }
 
-    // Protect against timing attacks
-    const providedBuf = Buffer.from(body.password);
-    const expectedBuf = Buffer.from(adminPassword);
+    // Timing-safe comparison using SHA-256 hashing to normalize length
+    const hash = (s: string) => createHash('sha256').update(s).digest();
+    const providedHash = hash(body.password);
+    const expectedHash = hash(adminPassword);
 
-    if (providedBuf.length !== expectedBuf.length || !timingSafeEqual(providedBuf, expectedBuf)) {
+    if (!timingSafeEqual(providedHash, expectedHash)) {
       set.status = 401;
       return { error: "Invalid credentials." };
     }
@@ -206,6 +269,7 @@ const app = new Elysia()
       value: token,
       httpOnly: true,
       secure: isProd,
+      sameSite: 'strict',
       path: '/',
       maxAge: 86400 // 24 hours
     });
@@ -239,29 +303,7 @@ const app = new Elysia()
     }
   }, (app) => app
     .post('/api/admin/pin-anime', async ({ body }) => {
-      const { id, isPinned, title } = body;
-      try {
-        if (db) {
-          if (isPinned) {
-            await db.insert(anime).values({
-              anilistId: id,
-              title: title,
-              isPinned: true
-            }).onConflictDoUpdate({
-              target: anime.anilistId,
-              set: { isPinned: true }
-            });
-          } else {
-            await db.update(anime)
-              .set({ isPinned: false })
-              .where(eq(anime.anilistId, id));
-          }
-          return { success: true };
-        }
-        return { success: false, error: "Database is offline. Changes not saved." };
-      } catch (e) {
-        return { success: false, error: "Database is offline. Changes not saved." };
-      }
+      return await pinEntity(anime, anime.anilistId, body);
     }, {
       body: t.Object({
         id: t.Number(),
@@ -270,29 +312,7 @@ const app = new Elysia()
       })
     })
     .post('/api/admin/pin-game', async ({ body }) => {
-      const { id, isPinned, title } = body;
-      try {
-        if (db) {
-          if (isPinned) {
-            await db.insert(games).values({
-              steamId: id,
-              title: title,
-              isPinned: true
-            }).onConflictDoUpdate({
-              target: games.steamId,
-              set: { isPinned: true }
-            });
-          } else {
-            await db.update(games)
-              .set({ isPinned: false })
-              .where(eq(games.steamId, id));
-          }
-          return { success: true };
-        }
-        return { success: false, error: "Database is offline. Changes not saved." };
-      } catch (e) {
-        return { success: false, error: "Database is offline. Changes not saved." };
-      }
+      return await pinEntity(games, games.steamId, body);
     }, {
       body: t.Object({
         id: t.Number(),
@@ -301,16 +321,10 @@ const app = new Elysia()
       })
     })
     .post('/api/admin/guestbook/delete', async ({ body }) => {
-      const { id } = body;
-      try {
-        if (db) {
-          await db.delete(guestbook).where(eq(guestbook.id, id));
-          return { success: true };
-        }
-        return { success: false, error: "Database is offline. Changes not saved." };
-      } catch (e) {
-        return { success: false, error: "Database is offline. Changes not saved." };
-      }
+      return await withDb({ success: false, error: "Database is offline." }, async () => {
+        await db!.delete(guestbook).where(eq(guestbook.id, body.id));
+        return { success: true };
+      });
     }, {
       body: t.Object({
         id: t.Number()

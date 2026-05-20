@@ -26,29 +26,16 @@ export async function getAllGames(steamId: string): Promise<SteamGame[]> {
 
     try {
       const response = await fetch(
-        `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${process.env.WEB_KEY}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&include_extended_appinfo=true&format=json`
+        `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${process.env.WEB_KEY}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true&include_extended_appinfo=true&format=json`
       );
+      if (!response.ok) {
+        console.error(`Steam API error: ${response.status}`);
+        return [];
+      }
       const data = await response.json();
       return data.response.games || [];
     } catch (error) {
       console.error("Steam Fetch Error:", error);
-      return [];
-    }
-  });
-}
-
-export async function getRecentGames(steamId: string): Promise<SteamGame[]> {
-  return withCache(`steam-recent-${steamId}`, 3600, async () => {
-    if (!process.env.WEB_KEY) return (await getAllGames(steamId)).slice(0, 3);
-
-    try {
-      const response = await fetch(
-        `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${process.env.WEB_KEY}&steamid=${steamId}&format=json`
-      );
-      const data = await response.json();
-      return data.response.games || [];
-    } catch (error) {
-      console.error("Steam Recent Fetch Error:", error);
       return [];
     }
   });

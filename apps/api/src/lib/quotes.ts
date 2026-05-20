@@ -10,37 +10,88 @@ export interface QuoteData {
   isFallback?: boolean;
 }
 
-const FALLBACK_QUOTES = [
+const QUOTE_SINGLETON_ID = 'global';
+
+const FALLBACK_QUOTES: QuoteData[] = [
   { quote: "Believe in the me that believes in you!", character: "Kamina", anime: "Gurren Lagann", characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/b2075-sWb5Xz76JWdX.png", animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx2001-XwRnjzGeFWRQ.png" },
   { quote: "I am the hope of the universe. I am the answer to all living things that cry out for peace.", character: "Goku", anime: "Dragon Ball Z", characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/246-wsRRr6z1kii8.png", animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx813-ZhnFNOeCU5dQ.png" },
   { quote: "If you don't take risks, you can't create a future.", character: "Monkey D. Luffy", anime: "One Piece", characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png", animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21-ELSYx3yMPcKM.jpg" }
 ];
 
+async function fetchWithCheck(url: string, options?: RequestInit): Promise<Response | null> {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      console.error(`API error ${res.status} for ${url}`);
+      return null;
+    }
+    return res;
+  } catch (e) {
+    console.error(`Fetch error for ${url}:`, e);
+    return null;
+  }
+}
+
+async function fetchCharacterAndAnimeImages(character: string, animeName: string): Promise<{ characterImage: string; animeImage: string }> {
+  const charQuery = `query ($search: String) { Character(search: $search) { image { large } } }`;
+  const animeQuery = `query ($search: String) { Media(search: $search, type: ANIME) { coverImage { large } } }`;
+
+  const [charRes, animeRes] = await Promise.all([
+    fetchWithCheck("https://graphql.anilist.co", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: charQuery, variables: { search: character } })
+    }),
+    fetchWithCheck("https://graphql.anilist.co", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: animeQuery, variables: { search: animeName } })
+    })
+  ]);
+
+  let characterImage = "";
+  let animeImage = "";
+
+  if (charRes) {
+    const data = await charRes.json();
+    characterImage = data?.data?.Character?.image?.large || "";
+  }
+
+  if (animeRes) {
+    const data = await animeRes.json();
+    animeImage = data?.data?.Media?.coverImage?.large || "";
+  }
+
+  return { characterImage, animeImage };
+}
+
 export async function getDailyQuote(forceUpdate: boolean = false): Promise<QuoteData> {
   try {
     if (!forceUpdate) {
       // 1. Check database for existing quote
-      let dbQuotes: any[] = [];
       if (db) {
-        dbQuotes = await db.select().from(dailyQuote).where(eq(dailyQuote.id, "global")).catch(() => []);
-      }
-      const dbQuoteItem = dbQuotes[0];
+        try {
+          const dbQuotes = await db.select().from(dailyQuote).where(eq(dailyQuote.id, QUOTE_SINGLETON_ID));
+          const dbQuoteItem = dbQuotes[0];
 
-      // If it exists and is less than 24 hours old, return it
-      if (dbQuoteItem) {
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - dbQuoteItem.updatedAt.getTime());
-        const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+          if (dbQuoteItem) {
+            const now = new Date();
+            const diffTime = Math.abs(now.getTime() - dbQuoteItem.updatedAt.getTime());
+            const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
 
-        if (diffHours < 24) {
-          return {
-            quote: dbQuoteItem.quote,
-            character: dbQuoteItem.character,
-            anime: dbQuoteItem.anime,
-            characterImage: dbQuoteItem.characterImage || undefined,
-            animeImage: dbQuoteItem.animeImage || undefined,
-            isFallback: false
-          };
+            if (diffHours < 24) {
+              return {
+                quote: dbQuoteItem.quote,
+                character: dbQuoteItem.character,
+                anime: dbQuoteItem.anime,
+                characterImage: dbQuoteItem.characterImage || undefined,
+                animeImage: dbQuoteItem.animeImage || undefined,
+                isFallback: false
+              };
+            }
+          }
+        } catch (e) {
+          console.error("DB query error in getDailyQuote:", e);
         }
       }
     }
@@ -48,85 +99,60 @@ export async function getDailyQuote(forceUpdate: boolean = false): Promise<Quote
     // 2. Fetch new quote from Yurippe API
     let newQuote = { quote: "", character: "", anime: "" };
     let isFallback = false;
-    try {
-      const quoteRes = await fetch("https://yurippe.vercel.app/api/quotes?random=1");
-      const quoteData = await quoteRes.json();
 
+    const quoteRes = await fetchWithCheck("https://yurippe.vercel.app/api/quotes?random=1");
+    
+    if (quoteRes) {
+      const quoteData = await quoteRes.json();
       if (Array.isArray(quoteData) && quoteData.length > 0 && quoteData[0].quote) {
         newQuote = {
           quote: quoteData[0].quote,
           character: quoteData[0].character,
-          anime: quoteData[0].show // Yurippe API uses 'show' instead of 'anime'
+          anime: quoteData[0].show
         };
       } else {
-        throw new Error("Invalid quote data from Yurippe API");
+        isFallback = true;
       }
-    } catch (e) {
-      console.error("Failed to fetch from Yurippe API, using fallback.", e);
+    } else {
       isFallback = true;
-      // Pick random fallback
-      const fallback = FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
-      newQuote = {
-        quote: fallback.quote,
-        character: fallback.character,
-        anime: fallback.anime
-      };
     }
 
-    // 3. Fetch images from Anilist GraphQL API to avoid Jikan rate limits
+    if (isFallback) {
+      const fallback = FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
+      newQuote = { quote: fallback.quote, character: fallback.character, anime: fallback.anime };
+    }
+
+    // 3. Fetch images (parallel)
     let characterImage = "";
     let animeImage = "";
 
-    try {
-      if (!isFallback) {
-        const charQuery = `query ($search: String) { Character(search: $search) { image { large } } }`;
-        const charRes = await fetch("https://graphql.anilist.co", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: charQuery, variables: { search: newQuote.character } })
-        });
-        const charData = await charRes.json();
-        characterImage = charData?.data?.Character?.image?.large || "";
-      }
-    } catch (e) {
-      console.error("Failed to fetch character image from Anilist", e);
+    if (!isFallback) {
+      const images = await fetchCharacterAndAnimeImages(newQuote.character, newQuote.anime);
+      characterImage = images.characterImage;
+      animeImage = images.animeImage;
     }
 
-    try {
-      if (!isFallback) {
-        const animeQuery = `query ($search: String) { Media(search: $search, type: ANIME) { coverImage { large } } }`;
-        const animeRes = await fetch("https://graphql.anilist.co", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: animeQuery, variables: { search: newQuote.anime } })
-        });
-        const animeData = await animeRes.json();
-        animeImage = animeData?.data?.Media?.coverImage?.large || "";
-      }
-    } catch (e) {
-      console.error("Failed to fetch anime image from Anilist", e);
-    }
-
-    // Fallbacks for images if API failed or if we are already using a fallback quote
+    // Fallback images
     if (isFallback || !characterImage || !animeImage) {
-        const fallbackMatch = FALLBACK_QUOTES.find(f => f.character === newQuote.character);
-        if (fallbackMatch) {
-            characterImage = characterImage || fallbackMatch.characterImage || "";
-            animeImage = animeImage || fallbackMatch.animeImage || "";
-        }
+      const fallbackMatch = FALLBACK_QUOTES.find(f => f.character === newQuote.character);
+      if (fallbackMatch) {
+        characterImage = characterImage || fallbackMatch.characterImage || "";
+        animeImage = animeImage || fallbackMatch.animeImage || "";
+      }
     }
 
     // 4. Save to Database
+    const now = new Date();
     if (db) {
       try {
         await db.insert(dailyQuote).values({
-          id: "global",
+          id: QUOTE_SINGLETON_ID,
           quote: newQuote.quote,
           character: newQuote.character,
           anime: newQuote.anime,
           characterImage,
           animeImage,
-          updatedAt: new Date()
+          updatedAt: now
         }).onConflictDoUpdate({
           target: dailyQuote.id,
           set: {
@@ -135,11 +161,11 @@ export async function getDailyQuote(forceUpdate: boolean = false): Promise<Quote
             anime: newQuote.anime,
             characterImage,
             animeImage,
-            updatedAt: new Date()
+            updatedAt: now
           }
         });
       } catch (e) {
-        console.error("Could not save quote to DB - likely offline");
+        console.error("Could not save quote to DB:", e);
       }
     }
 
@@ -153,7 +179,7 @@ export async function getDailyQuote(forceUpdate: boolean = false): Promise<Quote
     };
 
   } catch (error) {
-    console.error("Critical error in getDailyQuote", error);
+    console.error("Critical error in getDailyQuote:", error);
     return { ...FALLBACK_QUOTES[0], isFallback: true };
   }
 }

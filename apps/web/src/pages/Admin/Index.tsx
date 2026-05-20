@@ -10,6 +10,7 @@ export default function AdminIndex() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteStatus, setQuoteStatus] = useState<"idle" | "success" | "error">("idle");
 
   const handleAuth = async () => {
     if (!pass.trim()) return;
@@ -20,7 +21,8 @@ export default function AdminIndex() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pass })
+        body: JSON.stringify({ password: pass }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -39,28 +41,38 @@ export default function AdminIndex() {
 
   const handleForceQuote = async () => {
     setQuoteLoading(true);
-    await apiPost('/api/admin/quote/force-update', {});
-    setQuoteLoading(false);
-    alert("New quote fetched and saved!");
+    setQuoteStatus("idle");
+    try {
+      await apiPost('/api/admin/quote/force-update', {});
+      setQuoteStatus("success");
+      setTimeout(() => setQuoteStatus("idle"), 3000);
+    } catch (e) {
+      setQuoteStatus("error");
+      setTimeout(() => setQuoteStatus("idle"), 3000);
+    } finally {
+      setQuoteLoading(false);
+    }
   };
 
   if (!isAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950 p-4">
         <div className="manga-panel w-full max-w-md space-y-4">
-          <div className="flex justify-center mb-4 text-black">
+          <div className="flex justify-center mb-4 text-black dark:text-white">
             <ShieldCheck size={64} />
           </div>
           <h1 className="manga-title text-2xl w-full text-center">ADMIN ACCESS</h1>
           {error && (
-            <div className="bg-red-100 border-4 border-red-600 p-3 text-red-700 font-black uppercase text-sm text-center">
+            <div className="bg-red-100 dark:bg-red-950 border-4 border-red-600 p-3 text-red-700 dark:text-red-400 font-black uppercase text-sm text-center">
               {error}
             </div>
           )}
+          <label htmlFor="admin-password" className="sr-only">Access Code</label>
           <input 
+            id="admin-password"
             type="password" 
             placeholder="ACCESS CODE" 
-            className="w-full border-4 border-black p-3 font-black uppercase focus:bg-zinc-100 outline-none"
+            className="w-full border-4 border-black dark:border-white/20 p-3 font-black uppercase focus:bg-zinc-100 dark:focus:bg-zinc-800 outline-none bg-white dark:bg-zinc-900 dark:text-white"
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAuth()}
@@ -69,7 +81,7 @@ export default function AdminIndex() {
           <button 
             onClick={handleAuth}
             disabled={loading}
-            className="w-full bg-black text-white p-3 font-black uppercase hover:bg-zinc-800 transition-colors disabled:opacity-50"
+            className="w-full bg-black text-white dark:bg-white dark:text-black p-3 font-black uppercase hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
             {loading ? "Authenticating..." : "Authenticate"}
           </button>
@@ -118,6 +130,8 @@ export default function AdminIndex() {
           <Quote size={64} className={quoteLoading ? "animate-spin" : "group-hover:scale-110 transition-transform"} />
           <span className="text-3xl font-black uppercase italic">{quoteLoading ? "Fetching..." : "New Quote"}</span>
           <p className="text-xs font-bold opacity-60">Force fetch a new daily quote</p>
+          {quoteStatus === "success" && <p className="text-green-600 font-black text-sm uppercase">✓ New quote saved!</p>}
+          {quoteStatus === "error" && <p className="text-red-600 font-black text-sm uppercase">✗ Failed to fetch quote</p>}
         </button>
       </div>
       

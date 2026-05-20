@@ -2,30 +2,33 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
 export default function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark';
+    }
+    return false;
+  });
 
   useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    setIsDark(isDarkMode);
-  }, []);
-
-  const toggleTheme = () => {
     const root = document.documentElement;
     if (isDark) {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
       root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
     }
-    setIsDark(!isDark);
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    const newValue = !isDark;
+    setIsDark(newValue);
+    localStorage.setItem('theme', newValue ? 'dark' : 'light');
   };
 
   return (
     <button
       onClick={toggleTheme}
       className="manga-panel bg-white text-black p-3 hover:bg-black hover:text-white transition-colors"
-      aria-label="Toggle theme"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? <Sun size={24} /> : <Moon size={24} />}
     </button>

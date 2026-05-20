@@ -1,14 +1,12 @@
 import { useStore } from '../store/useStore';
 
-const API_BASE = '';
-
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(path, {
     ...options,
     headers,
     credentials: 'include',
@@ -22,15 +20,21 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   return res;
 }
 
-export async function apiGet(path: string) {
+export async function apiGet<T = unknown>(path: string): Promise<T> {
   const res = await apiFetch(path);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 
-export async function apiPost(path: string, body?: any) {
+export async function apiPost<T = unknown>(path: string, body?: unknown): Promise<T> {
   const res = await apiFetch(path, {
     method: 'POST',
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
   return res.json();
 }

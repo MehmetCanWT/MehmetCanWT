@@ -1,8 +1,8 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   
   --color-manga-black: #000000;
   --color-manga-white: #ffffff;
@@ -10,11 +10,6 @@
   
   --shadow-manga: 8px 8px 0px 0px rgba(0,0,0,1);
   --shadow-manga-hover: 4px 4px 0px 0px rgba(0,0,0,1);
-}
-
-:root {
-  --background: #ffffff;
-  --foreground: #000000;
 }
 
 @layer base {
@@ -25,25 +20,56 @@
     color: #000;
     @apply antialiased;
   }
+  
+  html.dark body {
+    background-image: radial-gradient(circle, #333 1.5px, transparent 1.5px);
+    background-color: #0a0a0a;
+    color: #e5e5e5;
+  }
 }
 
 @layer components {
   .manga-panel {
-    @apply border-4 border-black bg-white p-4 shadow-manga transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-manga-hover;
+    @apply border-4 border-black bg-white p-4 transition-all hover:translate-x-[2px] hover:translate-y-[2px];
+    box-shadow: var(--shadow-manga);
+  }
+  .manga-panel:hover {
+    box-shadow: var(--shadow-manga-hover);
+  }
+  
+  html.dark .manga-panel {
+    border-color: rgba(255,255,255,0.2);
+    background-color: #18181b;
+    color: #e5e5e5;
+    --shadow-manga: 8px 8px 0px 0px rgba(255,255,255,0.1);
+    --shadow-manga-hover: 4px 4px 0px 0px rgba(255,255,255,0.1);
   }
 
   .manga-title {
     @apply font-black uppercase tracking-tighter italic bg-black text-white px-2 py-1 inline-block;
   }
+  
+  html.dark .manga-title {
+    background-color: #e5e5e5;
+    color: #0a0a0a;
+  }
 
   .manga-text {
     @apply font-bold border-b-2 border-black mb-2;
+  }
+  
+  html.dark .manga-text {
+    border-color: rgba(255,255,255,0.2);
   }
 
   .halftone {
     background-image: radial-gradient(circle, #000 1px, transparent 1px);
     background-size: 4px 4px;
     opacity: 0.1;
+  }
+  
+  html.dark .halftone {
+    background-image: radial-gradient(circle, #fff 1px, transparent 1px);
   }
 }
 

@@ -17,6 +17,24 @@ export interface AnimeEntry {
   description?: string;
 }
 
+interface AniListMediaEntry {
+  media: {
+    id: number;
+    title: { english: string; romaji: string };
+    coverImage: { large: string };
+    averageScore: number;
+    description?: string;
+  };
+  status: string;
+  progress: number;
+  score: number;
+}
+
+interface AniListList {
+  name: string;
+  entries: AniListMediaEntry[];
+}
+
 const query = `
 query ($userName: String) {
   MediaListCollection(userName: $userName, type: ANIME) {
@@ -59,13 +77,24 @@ export async function getAllAnime(userName: string): Promise<AnimeEntry[]> {
         }),
       });
 
+      if (!response.ok) {
+        console.error(`AniList API error: ${response.status}`);
+        return [];
+      }
+
       const data = await response.json();
-      const lists = data.data.MediaListCollection.lists || [];
+      
+      if (data.errors) {
+        console.error("AniList GraphQL errors:", data.errors);
+        return [];
+      }
+
+      const lists: AniListList[] = data.data?.MediaListCollection?.lists || [];
       
       const allEntries: AnimeEntry[] = [];
       
-      lists.forEach((list: any) => {
-        list.entries.forEach((entry: any) => {
+      lists.forEach((list) => {
+        list.entries.forEach((entry) => {
           allEntries.push({
             id: entry.media.id,
             title: entry.media.title,
@@ -74,7 +103,7 @@ export async function getAllAnime(userName: string): Promise<AnimeEntry[]> {
             averageScore: entry.media.averageScore,
             userScore: entry.score || 0,
             progress: entry.progress,
-            description: entry.media.description, // Added description
+            description: entry.media.description,
           });
         });
       });
@@ -128,7 +157,19 @@ export async function getAnimeById(id: number): Promise<AnimeEntry | null> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: singleQuery, variables: { id } }),
       });
+
+      if (!response.ok) {
+        console.error(`AniList API error for id ${id}: ${response.status}`);
+        return null;
+      }
+
       const data = await response.json();
+      
+      if (data.errors || !data.data?.Media) {
+        console.error("AniList GraphQL error for id:", id, data.errors);
+        return null;
+      }
+
       const media = data.data.Media;
       return {
         id: media.id,
@@ -141,6 +182,7 @@ export async function getAnimeById(id: number): Promise<AnimeEntry | null> {
         description: media.description
       };
     } catch (error) {
+      console.error(`Failed to fetch anime by id ${id}:`, error);
       return null;
     }
   });

@@ -3,26 +3,48 @@ import { BookOpen, ArrowLeft, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/eden';
 import SEO from '../components/SEO';
+import type { AnimeEntry, AnimeResponse } from '../types';
+
+interface AnimePageData {
+  allAnime: AnimeEntry[];
+  pinnedIds: number[];
+}
 
 export default function Anime() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AnimePageData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
-      const res = await api.api.anime.get();
-      if (res.data) {
-        const sorted = [...res.data.allAnime].sort((a: any, b: any) => {
-          const isPinnedA = res.data.pinnedIds.includes(a.id);
-          const isPinnedB = res.data.pinnedIds.includes(b.id);
-          if (isPinnedA && !isPinnedB) return -1;
-          if (!isPinnedA && isPinnedB) return 1;
-          return (b.userScore || 0) - (a.userScore || 0);
-        });
-        setData({ allAnime: sorted, pinnedIds: res.data.pinnedIds });
+      try {
+        const res = await api.api.anime.get();
+        if (res.data) {
+          const responseData = res.data as AnimeResponse;
+          const sorted = [...responseData.allAnime].sort((a, b) => {
+            const isPinnedA = responseData.pinnedIds.includes(a.id);
+            const isPinnedB = responseData.pinnedIds.includes(b.id);
+            if (isPinnedA && !isPinnedB) return -1;
+            if (!isPinnedA && isPinnedB) return 1;
+            return (b.userScore || 0) - (a.userScore || 0);
+          });
+          setData({ allAnime: sorted, pinnedIds: responseData.pinnedIds });
+        }
+      } catch (e) {
+        console.error('Failed to fetch anime data:', e);
+        setError('Failed to load anime archive. Please try again.');
       }
     }
     fetchData();
   }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
+        <p className="font-black uppercase italic text-2xl text-red-600">{error}</p>
+        <button onClick={() => window.location.reload()} className="manga-panel font-black uppercase hover:bg-black hover:text-white transition-all">RETRY</button>
+      </div>
+    );
+  }
 
   if (!data) return <div className="p-20 text-center font-black uppercase text-4xl italic animate-pulse">Scanning Archive...</div>;
 
@@ -39,13 +61,14 @@ export default function Anime() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {data.allAnime.map((anime: any) => (
-          <div key={anime.id} className={`manga-panel relative group overflow-hidden ${data.pinnedIds.includes(anime.id) ? "ring-4 ring-purple-600 bg-purple-50" : "bg-zinc-50"}`}>
+        {data.allAnime.map((anime) => (
+          <div key={anime.id} className={`manga-panel relative group overflow-hidden ${data.pinnedIds.includes(anime.id) ? "ring-4 ring-purple-600 bg-purple-50 dark:bg-purple-950" : "bg-zinc-50 dark:bg-zinc-800"}`}>
             <div className="relative z-10 flex flex-col h-full">
-              <div className="relative aspect-[3/4] border-2 border-black mb-4 overflow-hidden bg-black">
+              <div className="relative aspect-[3/4] border-2 border-black dark:border-white/20 mb-4 overflow-hidden bg-black">
                 <img 
                   loading="lazy"
-                  src={anime.coverImage.large}                  alt={anime.title.english}
+                  src={anime.coverImage.large}
+                  alt={anime.title.english || anime.title.romaji}
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                 />
                 {data.pinnedIds.includes(anime.id) && (
@@ -62,10 +85,10 @@ export default function Anime() {
                 </div>
               </div>
               
-              <div className="mt-auto border-t-2 border-black pt-4">
+              <div className="mt-auto border-t-2 border-black dark:border-white/20 pt-4">
                 <h3 className="font-black text-xl uppercase italic leading-tight mb-2 line-clamp-2">{anime.title.english || anime.title.romaji}</h3>
                 <div className="flex justify-between items-center font-bold text-[10px] uppercase">
-                  <span className="bg-black text-white px-2 py-0.5">{anime.format}</span>
+                  <span className="bg-black text-white dark:bg-white dark:text-black px-2 py-0.5">{anime.format}</span>
                   <span className={anime.status === 'CURRENT' ? 'text-green-600 animate-pulse' : 'text-gray-400'}>
                     {anime.status}
                   </span>

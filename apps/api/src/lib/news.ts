@@ -5,21 +5,32 @@ export interface NewsItem {
   source: string;
 }
 
+interface JikanAnime {
+  title: string;
+}
+
 export async function getMixedNews(): Promise<NewsItem[]> {
   return withCache('mixed-news', 1800, async () => {
     try {
       const animeRes = await fetch("https://api.jikan.moe/v4/seasons/now");
+      
+      if (!animeRes.ok) {
+        console.error(`Jikan API error: ${animeRes.status}`);
+        return [{ title: "NEWS FEED OFFLINE // VDS NODE 01 STANDBY", source: "System" }];
+      }
+
       const animeData = await animeRes.json();
-      const animeNews = (animeData.data || []).slice(0, 5).map((a: any) => ({
+      const animeNews = (animeData.data || []).slice(0, 5).map((a: JikanAnime) => ({
         title: `NEW SEASON: ${a.title} HAS STARTED!`,
         source: "Jikan"
       }));
 
-      const gamingNews = [
-        { title: "GTA VI TRAILER 2 RUMORS INTENSIFY FOR LATE 2025", source: "Gaming" },
-        { title: "STEAM DECK 2 DEVELOPMENT CONFIRMED BY VALVE SOURCES", source: "Hardware" },
-        { title: "ELDER RING DLC REACHES 20 MILLION COPIES SOLD", source: "Gaming" },
-        { title: "NINTENDO SWITCH 2 BACKWARD COMPATIBILITY LEAKED", source: "Gaming" },
+      // Static gaming headlines as placeholders — replace with a real API when available
+      const gamingNews: NewsItem[] = [
+        { title: "GTA VI OFFICIAL RELEASE DATE ANNOUNCED", source: "Gaming" },
+        { title: "STEAM SUMMER SALE 2026 IS LIVE NOW", source: "Gaming" },
+        { title: "ELDEN RING NIGHTREIGN LAUNCHES TO CRITICAL ACCLAIM", source: "Gaming" },
+        { title: "NINTENDO SWITCH 2 NOW AVAILABLE WORLDWIDE", source: "Gaming" },
       ];
 
       const mixed = [...animeNews, ...gamingNews].sort(() => Math.random() - 0.5);
