@@ -11,7 +11,7 @@ services:
     working_dir: /app/packages/db
     command: ["bun", "run", "push"]
     networks:
-      - mehmetcanwt-net
+      - proxy_net
 
   mehmetcanwt:
     container_name: mehmetcanwt
@@ -36,8 +36,8 @@ services:
       - DISCORD_ID=${DISCORD_ID}
       - NODE_ENV=production
     networks:
-      - mehmetcanwt-net
+      - proxy_net
 
 networks:
-  mehmetcanwt-net:
-    driver: bridge
+  proxy_net:
+    external: true
