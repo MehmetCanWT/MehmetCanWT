@@ -30,7 +30,7 @@
 
 @layer components {
   .manga-panel {
-    @apply border-4 border-black bg-white p-4 transition-all hover:translate-x-[2px] hover:translate-y-[2px];
+    @apply border-4 border-black bg-white text-black p-4 transition-all hover:translate-x-[2px] hover:translate-y-[2px];
     box-shadow: var(--shadow-manga);
   }
   .manga-panel:hover {

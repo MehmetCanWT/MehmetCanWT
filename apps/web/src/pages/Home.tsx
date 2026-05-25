@@ -109,14 +109,14 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <nav className="manga-panel bg-black text-white flex flex-col items-center justify-center space-y-2 sm:space-y-4 py-6 sm:py-0">
-           <Link to="/anime" className="text-xl sm:text-2xl font-black italic uppercase hover:text-purple-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-white/20 pb-2">
+        <nav className="manga-panel bg-white text-black dark:bg-black dark:text-white flex flex-col items-center justify-center space-y-2 sm:space-y-4 py-6 sm:py-0">
+           <Link to="/anime" className="text-xl sm:text-2xl font-black italic uppercase hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-black/20 dark:border-white/20 pb-2">
              <BookOpen size={20} /> Anime List
            </Link>
-           <Link to="/games" className="text-xl sm:text-2xl font-black italic uppercase hover:text-pink-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-white/20 pb-2">
+           <Link to="/games" className="text-xl sm:text-2xl font-black italic uppercase hover:text-pink-600 dark:hover:text-pink-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-black/20 dark:border-white/20 pb-2">
              <Gamepad2 size={20} /> Game Vault
            </Link>
-           <Link to="/code" className="text-xl sm:text-2xl font-black italic uppercase hover:text-green-400 transition-colors flex items-center gap-2 w-full justify-center">
+           <Link to="/code" className="text-xl sm:text-2xl font-black italic uppercase hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-2 w-full justify-center">
              <Terminal size={20} /> Code Vault
            </Link>
         </nav>
