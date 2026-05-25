@@ -18,14 +18,8 @@ jobs:
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
           script: |
-            TARGET_DIR=$([ "${{ secrets.VDS_USER }}" = "root" ] && echo "/root/mehmetcanwt" || echo "/home/${{ secrets.VDS_USER }}/mehmetcanwt")
-            mkdir -p "$TARGET_DIR"
-            cd "$TARGET_DIR"
-            if [ ! -d ".git" ]; then
-              git clone git@github.com:${{ github.repository }}.git .
-            else
-              git pull origin main
-            fi
+            cd /root/MehmetCanWT
+            git pull origin main
             if [ -f "docker-compose.yml" ]; then
               docker compose down
               docker compose up -d --build
