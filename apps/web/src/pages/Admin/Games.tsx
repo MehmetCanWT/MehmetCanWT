@@ -3,7 +3,7 @@ import { ArrowLeft, Star, StarOff, Search } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { apiGet, apiPost } from '../../lib/api';
-import type { SteamGame, GamesResponse } from '../../types';
+import type { GamesResponse } from '../../types';
 
 export default function AdminGames() {
   const { isAuth } = useStore();

@@ -227,7 +227,7 @@ const app = new Elysia()
       return { error: "Message contains restricted content. Keep it friendly!" };
     }
 
-    return await withDb({ error: "Database is offline. Changes not saved." }, async () => {
+    return await withDb<{ success: boolean; error?: string }>({ success: false, error: "Database is offline. Changes not saved." }, async () => {
       await db!.insert(guestbook).values({ username, message });
       return { success: true };
     });
@@ -321,7 +321,7 @@ const app = new Elysia()
       })
     })
     .post('/api/admin/guestbook/delete', async ({ body }) => {
-      return await withDb({ success: false, error: "Database is offline." }, async () => {
+      return await withDb<{ success: boolean; error?: string }>({ success: false, error: "Database is offline." }, async () => {
         await db!.delete(guestbook).where(eq(guestbook.id, body.id));
         return { success: true };
       });

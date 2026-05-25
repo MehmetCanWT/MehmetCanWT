@@ -3,7 +3,7 @@ import { ArrowLeft, Star, StarOff, Search } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { apiGet, apiPost } from '../../lib/api';
-import type { AnimeEntry, AnimeResponse } from '../../types';
+import type { AnimeResponse } from '../../types';
 
 export default function AdminAnime() {
   const { isAuth } = useStore();

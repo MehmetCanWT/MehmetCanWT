@@ -31,7 +31,7 @@ export default function Home() {
   const fetchGuestbook = useCallback(async () => {
     try {
       const guestbookRes = await api.api.guestbook.get();
-      setData((prev) => prev ? { ...prev, guestbook: (guestbookRes.data as GuestbookEntry[]) || [] } : prev);
+      setData((prev) => prev ? { ...prev, guestbook: (guestbookRes.data as unknown as GuestbookEntry[]) || [] } : prev);
     } catch (e) {
       console.error('Failed to refresh guestbook:', e);
     }
@@ -55,7 +55,7 @@ export default function Home() {
           favoriteAnime: allAnime.find((a) => a.id === FAVORITE_ANIME_ID) || allAnime[0] || null,
           topGame: [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0] || null,
           news: (newsRes.data as NewsItem[]) || [],
-          guestbook: (guestbookRes.data as GuestbookEntry[]) || [],
+          guestbook: (guestbookRes.data as unknown as GuestbookEntry[]) || [],
           dailyQuote: (quoteRes.data as QuoteData) || { quote: "Loading...", character: "System", anime: "Archive" }
         });
       } catch (e) {
