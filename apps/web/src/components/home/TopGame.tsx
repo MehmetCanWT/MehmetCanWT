@@ -8,11 +8,11 @@ export default function TopGame({ game }: TopGameProps) {
   return (
     <section className="space-y-4">
       <div className="manga-title text-xl sm:text-2xl">MOST PLAYED MISSION</div>
-      <div className="manga-panel relative group overflow-hidden bg-zinc-100 dark:bg-zinc-800 min-h-[250px] sm:min-h-[300px] block cursor-default outline-none">
-        <div className="absolute inset-0 halftone opacity-20"></div>
+      <div className="manga-panel relative group overflow-hidden bg-white text-black dark:bg-zinc-800 dark:text-white min-h-[250px] sm:min-h-[300px] block cursor-default outline-none">
+        <div className="absolute inset-0 halftone opacity-10 dark:opacity-20"></div>
         <div className="relative z-10 flex flex-col justify-between h-full">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-            <div className="w-full sm:w-1/2 aspect-video border-4 border-black dark:border-white/20 overflow-hidden bg-black shrink-0 relative">
+            <div className="w-full sm:w-1/2 aspect-video border-4 border-black dark:border-white/20 overflow-hidden bg-white dark:bg-black shrink-0 relative">
               <img
                 loading="lazy"
                 src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`}

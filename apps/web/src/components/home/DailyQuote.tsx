@@ -11,7 +11,7 @@ export default function DailyQuote({ quote }: DailyQuoteProps) {
       <div className="manga-title text-xl sm:text-2xl flex items-center gap-2">
         <Quote size={20} /> DAILY INSPIRATION
       </div>
-      <div className="manga-panel relative overflow-hidden bg-white dark:bg-zinc-900 p-6 sm:p-8">
+      <div className="manga-panel relative overflow-hidden bg-white text-black dark:bg-zinc-900 dark:text-white p-6 sm:p-8">
         <div className="absolute inset-0 halftone opacity-10"></div>
         <div className="relative z-10 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
           <div className="flex-shrink-0 relative w-24 h-24 sm:w-32 sm:h-32 aspect-square">
@@ -36,7 +36,7 @@ export default function DailyQuote({ quote }: DailyQuoteProps) {
               <span className="bg-black text-white dark:bg-white dark:text-black px-3 py-1 font-black text-sm sm:text-base uppercase tracking-widest">
                 {quote.character}
               </span>
-              <span className="text-xs sm:text-sm font-bold text-gray-500 uppercase mt-1">
+              <span className="text-xs sm:text-sm font-bold text-black/60 dark:text-gray-500 uppercase mt-1">
                 IN // {quote.anime}
               </span>
             </div>

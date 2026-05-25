@@ -8,8 +8,8 @@ export default function FavoriteAnime({ anime }: FavoriteAnimeProps) {
   return (
     <section className="space-y-4">
       <div className="manga-title text-xl sm:text-2xl">FAVORITE SELECTION</div>
-      <div className="manga-panel relative group overflow-hidden bg-zinc-100 dark:bg-zinc-800 min-h-[250px] sm:min-h-[300px] block cursor-default outline-none">
-        <div className="absolute inset-0 halftone opacity-20"></div>
+      <div className="manga-panel relative group overflow-hidden bg-white text-black dark:bg-zinc-800 dark:text-white min-h-[250px] sm:min-h-[300px] block cursor-default outline-none">
+        <div className="absolute inset-0 halftone opacity-10 dark:opacity-20"></div>
         <div className="relative z-10 flex flex-col sm:flex-row gap-4 sm:gap-6 h-full">
           <div className="w-full sm:w-1/3 aspect-[3/4] border-4 border-black dark:border-white/20 overflow-hidden flex-shrink-0 relative">
             <img
