@@ -4,6 +4,9 @@
   "main": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "push": "drizzle-kit push"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/pg": "^8.20.0",

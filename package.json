@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "bun --filter \"*\" dev",
     "build": "bun --filter \"web\" build",
+    "db:push": "bun --filter \"db\" run push",
     "start": "NODE_ENV=production bun apps/api/src/index.ts"
   },
   "devDependencies": {
