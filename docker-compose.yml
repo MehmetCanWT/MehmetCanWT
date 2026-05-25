@@ -4,11 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: mehmetcanwt-migration
+    network_mode: host
     environment:
       - DATABASE_URL=${DATABASE_URL}
     command: ["bun", "run", "db:push"]
-    networks:
-      - mehmetcanwt-net
 
   mehmetcanwt:
     container_name: mehmetcanwt
@@ -16,8 +15,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "3000:3000"
+    network_mode: host
     depends_on:
       migration:
         condition: service_completed_successfully
@@ -30,9 +28,3 @@ services:
       - STEAM_ID=${STEAM_ID}
       - DISCORD_ID=${DISCORD_ID}
       - NODE_ENV=production
-    networks:
-      - mehmetcanwt-net
-
-networks:
-  mehmetcanwt-net:
-    driver: bridge
