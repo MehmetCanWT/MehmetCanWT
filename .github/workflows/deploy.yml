@@ -12,12 +12,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to VDS via SSH
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VDS_HOST }}
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
           script: |
-            cd /home/${{ secrets.VDS_USER }}/mehmetcanwt
-            git pull origin main
-            docker compose up -d --build
+            TARGET_DIR=$([ "${{ secrets.VDS_USER }}" = "root" ] && echo "/root/mehmetcanwt" || echo "/home/${{ secrets.VDS_USER }}/mehmetcanwt")
+            mkdir -p "$TARGET_DIR"
+            cd "$TARGET_DIR"
+            if [ ! -d ".git" ]; then
+              git clone git@github.com:${{ github.repository }}.git .
+            else
+              git pull origin main
+            fi
+            if [ -f "docker-compose.yml" ]; then
+              docker compose down
+              docker compose up -d --build
+              docker system prune -a --volumes -f
+            else
+              echo "Hata: Klasorde docker-compose.yml bulunamadi!"
+              exit 1
+            fi
