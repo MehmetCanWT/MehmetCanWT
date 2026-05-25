@@ -414,8 +414,9 @@ const app = new Elysia()
       set.headers['content-type'] = 'image/png';
       return pngBuffer;
     } catch (e) {
+      console.error("OG Generation Error:", e);
       set.headers['content-type'] = 'text/plain';
-      return "OG Generation failed - likely DB offline";
+      return "OG Generation failed. Check logs for details.";
     }
   });
 

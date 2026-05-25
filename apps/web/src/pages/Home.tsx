@@ -97,7 +97,7 @@ export default function Home() {
       <header className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 manga-panel flex flex-col justify-center items-center xl:items-start text-center xl:text-left overflow-hidden">
           <h1 className="text-[12vw] sm:text-[9vw] md:text-[6vw] lg:text-[5vw] font-black italic tracking-tighter uppercase leading-none whitespace-nowrap">
-            Mehmet<span className="bg-black text-white dark:bg-white dark:text-black px-1 sm:px-2 ml-1">Can</span>WT
+            Mehmet<span className="px-1 sm:px-2 ml-1">Can</span>WT
           </h1>
           <div className="mt-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 border-t-4 border-black dark:border-white/20 pt-2 w-full justify-center xl:justify-start">
             <p className="text-lg sm:text-xl font-bold uppercase tracking-widest text-center">
@@ -141,8 +141,8 @@ export default function Home() {
           <DiscordPresence discord={discord} />
 
           {/* Quick Stats / Identity */}
-          <section className="manga-panel bg-black text-white p-4">
-             <h4 className="font-black italic uppercase border-b border-white/20 mb-2 pb-1 text-sm">IDENTITY_VERIFIED</h4>
+          <section className="manga-panel bg-white text-black dark:bg-black dark:text-white p-4">
+             <h4 className="font-black italic uppercase border-b border-black/20 dark:border-white/20 mb-2 pb-1 text-sm">IDENTITY_VERIFIED</h4>
              <div className="space-y-1 text-[10px] font-bold font-mono">
                 <p>LOCATION: TURKIYE</p>
                 <p>ROLE: FULLSTACK_RENEGADE</p>
