@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
           script: |
-            cd /root/MehmetCanWT
+            cd /root/stacks/MehmetCanWT
             git pull origin main
             if [ -f "docker-compose.yml" ]; then
               docker compose down
