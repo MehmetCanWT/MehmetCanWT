@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, varchar, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, boolean, timestamp, index } from 'drizzle-orm/pg-core';
 
 export const anime = pgTable('anime', {
   id: serial('id').primaryKey(),
@@ -31,8 +31,8 @@ export const adminConfig = pgTable('admin_config', {
 
 export const guestbook = pgTable('guestbook', {
   id: serial('id').primaryKey(),
-  username: varchar('username', { length: 50 }).notNull(),
-  message: varchar('message', { length: 500 }).notNull(),
+  username: text('username').notNull(),
+  message: text('message').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   index('guestbook_created_at_idx').on(table.createdAt),
