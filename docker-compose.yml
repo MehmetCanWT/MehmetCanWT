@@ -4,7 +4,7 @@ services:
     container_name: mehmetcanwt-redis
     restart: always
     networks:
-      - proxy_net
+      - mehmetcanwt
 
   migration:
     build:
@@ -18,7 +18,7 @@ services:
     working_dir: /app/packages/db
     command: ["bun", "run", "push"]
     networks:
-      - proxy_net
+      - mehmetcanwt
 
   mehmetcanwt:
     container_name: mehmetcanwt
