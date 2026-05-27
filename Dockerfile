@@ -7,7 +7,7 @@ COPY package.json bun.lock ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY packages/db/package.json ./packages/db/
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Build the apps
 FROM deps AS builder
