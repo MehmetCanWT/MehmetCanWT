@@ -23,12 +23,17 @@ jobs:
             if [ -f "docker-compose.yml" ]; then
               docker compose down
               docker compose up -d --build
-              # Only prune if deploy was successful
-              if docker compose ps --filter "status=running" | grep -q "mehmetcanwt"; then
+              # Check if the main service is running
+              if docker compose ps --services --filter "status=running" | grep -Fxq "mehmetcanwt"; then
+                echo "Deployment successful! Pruning unused images..."
                 docker image prune -f
               else
-                echo "WARNING: Main container not running, skipping prune"
-                docker compose logs --tail=50
+                echo "ERROR: Main container (mehmetcanwt) is not running!"
+                echo "=== Migration Container Logs ==="
+                docker compose logs --tail=100 migration
+                echo "=== Main Container Logs ==="
+                docker compose logs --tail=100 mehmetcanwt
+                exit 1
               fi
             else
               echo "Hata: Klasorde docker-compose.yml bulunamadi!"
