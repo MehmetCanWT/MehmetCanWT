@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "push": "drizzle-kit push --force"
+    "push": "drizzle-kit push --force --verbose"
   },
   "devDependencies": {
     "@types/bun": "latest",
