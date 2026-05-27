@@ -1,4 +1,22 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: mehmetcanwt-db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1597532486
+      - POSTGRES_DB=mehmetcanwt
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mehmetcanwt"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mehmetcanwt
+
   redis:
     image: redis:alpine
     container_name: mehmetcanwt-redis
@@ -11,10 +29,11 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: mehmetcanwt-migration
-    extra_hosts:
-      - "db_host:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql://postgres:1597532486@db:5432/mehmetcanwt?schema=public
     working_dir: /app/packages/db
     command: ["bun", "run", "push"]
     networks:
@@ -28,13 +47,13 @@ services:
     restart: always
     ports:
       - "3000:3000"
-    extra_hosts:
-      - "db_host:host-gateway"
     depends_on:
+      db:
+        condition: service_healthy
       migration:
         condition: service_completed_successfully
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql://postgres:1597532486@db:5432/mehmetcanwt?schema=public
       - REDIS_URL=redis://redis:6379
       - WEB_KEY=${WEB_KEY}
       - LANYARD_API_KEY=${LANYARD_API_KEY}
@@ -49,3 +68,6 @@ services:
 networks:
   mehmetcanwt:
     external: true
+
+volumes:
+  pgdata:
