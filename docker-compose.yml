@@ -44,8 +44,8 @@ services:
       - DISCORD_ID=${DISCORD_ID}
       - NODE_ENV=production
     networks:
-      - proxy_net
+      - mehmetcanwt
 
 networks:
-  proxy_net:
+  mehmetcanwt:
     external: true
