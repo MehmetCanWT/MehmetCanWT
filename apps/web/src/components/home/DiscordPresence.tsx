@@ -11,7 +11,7 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
       <div className="manga-title text-xl sm:text-2xl flex items-center gap-2">
         <Radio size={20} className="animate-pulse" /> LIVE TELEMETRY
       </div>
-      <div className="manga-panel bg-zinc-50 dark:bg-zinc-800">
+      <div className="manga-panel bg-white text-black dark:bg-zinc-800 dark:text-white">
         {discord && discord.discord_user ? (
           <div className="space-y-4">
             <div className="flex items-center gap-4 border-b-4 border-black dark:border-white/20 pb-4">
