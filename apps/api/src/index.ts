@@ -30,9 +30,13 @@ const JWT_SECRET_KEY = process.env.JWT_SECRET || 'fallback_dev_secret_change_me'
 // Fetch font once on start (Safe fetch)
 let fontData: ArrayBuffer;
 try {
-  fontData = await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter-Black.ttf').then(res => res.arrayBuffer());
+  const res = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/inter/static/Inter-Black.ttf');
+  if (!res.ok) {
+    throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
+  }
+  fontData = await res.arrayBuffer();
 } catch (e) {
-  console.warn("Could not fetch font for OG image, using fallback logic.");
+  console.warn("Could not fetch font for OG image, using fallback logic:", e);
 }
 
 // --- Rate limiter for guestbook and login ---
