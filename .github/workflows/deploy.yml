@@ -21,7 +21,6 @@ jobs:
             cd /root/stacks/MehmetCanWT
             git pull origin main
             if [ -f "docker-compose.yml" ]; then
-              docker compose down
               docker compose up -d --build
               # Check if the main service is running
               if docker compose ps --services --filter "status=running" | grep -Fxq "mehmetcanwt"; then
