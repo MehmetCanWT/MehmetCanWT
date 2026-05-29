@@ -109,11 +109,17 @@ async function pinEntity(
   }
   try {
     if (body.isPinned) {
-      await db.insert(table).values({
-        [idField.name]: body.id,
+      const values: any = {
         title: body.title,
         isPinned: true
-      } as any).onConflictDoUpdate({
+      };
+      if (table === anime) {
+        values.anilistId = body.id;
+      } else {
+        values.steamId = body.id;
+      }
+
+      await db.insert(table).values(values).onConflictDoUpdate({
         target: idField,
         set: { isPinned: true }
       });
