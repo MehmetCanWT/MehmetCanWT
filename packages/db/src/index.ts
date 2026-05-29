@@ -9,12 +9,19 @@ let dbInstance: NodePgDatabase<typeof schema> | null = null;
 
 if (connectionString) {
   try {
+    const useSSL = isProd && 
+      process.env.DB_SSL !== 'false' && 
+      !connectionString.includes('@db:') && 
+      !connectionString.includes('@db/') && 
+      !connectionString.includes('@localhost') && 
+      !connectionString.includes('@127.0.0.1');
+
     const pool = new Pool({
       connectionString,
       max: 10,
       connectionTimeoutMillis: 5000,
       idleTimeoutMillis: 30000,
-      ...(isProd ? { ssl: { rejectUnauthorized: false } } : {}),
+      ...(useSSL ? { ssl: { rejectUnauthorized: false } } : {}),
     });
     dbInstance = drizzle(pool, { schema });
     console.log("✅ Database pool initialized successfully.");
