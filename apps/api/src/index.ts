@@ -148,7 +148,35 @@ const app = new Elysia()
     }
   }))
   .use(cors({
-    origin: isProd ? [/^https:\/\/(www\.)?mehmetcanwt\.xyz$/] : true,
+    origin: (request) => {
+      const origin = request.headers.get('origin');
+      if (!origin) return true;
+
+      // In development, allow localhost and 127.0.0.1
+      if (!isProd || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+        return true;
+      }
+
+      // Parse custom origins from environment
+      const allowedOrigins = process.env.CORS_ORIGINS 
+        ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+        : [];
+      
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        return true;
+      }
+
+      // Fallback defaults
+      const defaultRegex = /^https:\/\/(www\.)?mehmetcanwt\.xyz$/;
+      if (defaultRegex.test(origin)) return true;
+
+      // Allow any HTTPS origin dynamically to support custom domains in Nginx Proxy Manager
+      if (origin.startsWith('https://')) {
+        return true;
+      }
+
+      return false;
+    },
     credentials: true
   }))
   // Security Headers Middleware
