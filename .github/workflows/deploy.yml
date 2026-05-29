@@ -19,7 +19,8 @@ jobs:
           key: ${{ secrets.VDS_SSH_KEY }}
           script: |
             cd /root/stacks/MehmetCanWT
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             if [ -f "docker-compose.yml" ]; then
               docker compose up -d --build
               # Check if the main service is running
