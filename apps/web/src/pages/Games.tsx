@@ -17,17 +17,21 @@ export default function Games() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await api.api.games.get();
+        const res = await api.api.games.get().catch(() => ({ data: null }));
         if (res.data) {
           const responseData = res.data as GamesResponse;
-          const sorted = [...responseData.allGames].sort((a, b) => {
-            const isPinnedA = responseData.pinnedIds.includes(a.appid);
-            const isPinnedB = responseData.pinnedIds.includes(b.appid);
+          const gamesList = Array.isArray(responseData?.allGames) ? responseData.allGames : [];
+          const pinnedIds = Array.isArray(responseData?.pinnedIds) ? responseData.pinnedIds : [];
+          const sorted = [...gamesList].sort((a, b) => {
+            const isPinnedA = pinnedIds.includes(a.appid);
+            const isPinnedB = pinnedIds.includes(b.appid);
             if (isPinnedA && !isPinnedB) return -1;
             if (!isPinnedA && isPinnedB) return 1;
             return b.playtime_forever - a.playtime_forever;
           });
-          setData({ allGames: sorted, pinnedIds: responseData.pinnedIds });
+          setData({ allGames: sorted, pinnedIds });
+        } else {
+          setData({ allGames: [], pinnedIds: [] });
         }
       } catch (e) {
         console.error('Failed to fetch games data:', e);

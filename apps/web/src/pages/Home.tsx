@@ -31,7 +31,8 @@ export default function Home() {
   const fetchGuestbook = useCallback(async () => {
     try {
       const guestbookRes = await api.api.guestbook.get();
-      setData((prev) => prev ? { ...prev, guestbook: (guestbookRes.data as unknown as GuestbookEntry[]) || [] } : prev);
+      const entries = Array.isArray(guestbookRes?.data) ? (guestbookRes.data as unknown as GuestbookEntry[]) : [];
+      setData((prev) => prev ? { ...prev, guestbook: entries } : prev);
     } catch (e) {
       console.error('Failed to refresh guestbook:', e);
     }
@@ -41,22 +42,38 @@ export default function Home() {
     async function fetchData() {
       try {
         const [animeRes, gameRes, newsRes, guestbookRes, quoteRes] = await Promise.all([
-          api.api.anime.get(),
-          api.api.games.get(),
-          api.api.news.get(),
-          api.api.guestbook.get(),
-          api.api.quote.get()
+          api.api.anime.get().catch(() => ({ data: null })),
+          api.api.games.get().catch(() => ({ data: null })),
+          api.api.news.get().catch(() => ({ data: [] })),
+          api.api.guestbook.get().catch(() => ({ data: [] })),
+          api.api.quote.get().catch(() => ({ data: null }))
         ]);
         
-        const allAnime = (animeRes.data as { allAnime: AnimeEntry[] } | null)?.allAnime || [];
-        const allGames = (gameRes.data as { allGames: SteamGame[] } | null)?.allGames || [];
+        const rawAnime = (animeRes?.data as { allAnime?: AnimeEntry[] } | null)?.allAnime;
+        const allAnime = Array.isArray(rawAnime) ? rawAnime : [];
+
+        const rawGames = (gameRes?.data as { allGames?: SteamGame[] } | null)?.allGames;
+        const allGames = Array.isArray(rawGames) ? rawGames : [];
+
+        const newsList = Array.isArray(newsRes?.data) ? (newsRes.data as NewsItem[]) : [];
+        const guestbookList = Array.isArray(guestbookRes?.data) ? (guestbookRes.data as unknown as GuestbookEntry[]) : [];
+
+        const quoteData = (quoteRes?.data && typeof quoteRes.data === 'object' && 'quote' in quoteRes.data)
+          ? (quoteRes.data as QuoteData)
+          : {
+              quote: "Believe in the me that believes in you!",
+              character: "Kamina",
+              anime: "Gurren Lagann",
+              characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/b2075-sWb5Xz76JWdX.png",
+              animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx2001-XwRnjzGeFWRQ.png"
+            };
 
         setData({
           favoriteAnime: allAnime.find((a) => a.id === FAVORITE_ANIME_ID) || allAnime[0] || null,
           topGame: [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0] || null,
-          news: (newsRes.data as NewsItem[]) || [],
-          guestbook: (guestbookRes.data as unknown as GuestbookEntry[]) || [],
-          dailyQuote: (quoteRes.data as QuoteData) || { quote: "Loading...", character: "System", anime: "Archive" }
+          news: newsList,
+          guestbook: guestbookList,
+          dailyQuote: quoteData
         });
       } catch (e) {
         console.error('Failed to fetch initial data:', e);

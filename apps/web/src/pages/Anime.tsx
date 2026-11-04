@@ -17,17 +17,21 @@ export default function Anime() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await api.api.anime.get();
+        const res = await api.api.anime.get().catch(() => ({ data: null }));
         if (res.data) {
           const responseData = res.data as AnimeResponse;
-          const sorted = [...responseData.allAnime].sort((a, b) => {
-            const isPinnedA = responseData.pinnedIds.includes(a.id);
-            const isPinnedB = responseData.pinnedIds.includes(b.id);
+          const animeList = Array.isArray(responseData?.allAnime) ? responseData.allAnime : [];
+          const pinnedIds = Array.isArray(responseData?.pinnedIds) ? responseData.pinnedIds : [];
+          const sorted = [...animeList].sort((a, b) => {
+            const isPinnedA = pinnedIds.includes(a.id);
+            const isPinnedB = pinnedIds.includes(b.id);
             if (isPinnedA && !isPinnedB) return -1;
             if (!isPinnedA && isPinnedB) return 1;
             return (b.userScore || 0) - (a.userScore || 0);
           });
-          setData({ allAnime: sorted, pinnedIds: responseData.pinnedIds });
+          setData({ allAnime: sorted, pinnedIds });
+        } else {
+          setData({ allAnime: [], pinnedIds: [] });
         }
       } catch (e) {
         console.error('Failed to fetch anime data:', e);

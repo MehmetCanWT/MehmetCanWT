@@ -8,6 +8,8 @@ interface GuestbookSectionProps {
 }
 
 export default function GuestbookSection({ entries, onNewEntry }: GuestbookSectionProps) {
+  const safeEntries = Array.isArray(entries) ? entries : [];
+
   return (
     <section className="space-y-4">
       <div className="manga-title text-xl sm:text-2xl flex items-center gap-2">
@@ -16,8 +18,8 @@ export default function GuestbookSection({ entries, onNewEntry }: GuestbookSecti
       <div className="manga-panel space-y-6">
         <GuestbookForm onSuccess={onNewEntry} />
         <div className="border-t-4 border-black dark:border-white/20 pt-4 space-y-4">
-          {entries.length > 0 ? (
-            entries.map((entry) => (
+          {safeEntries.length > 0 ? (
+            safeEntries.map((entry) => (
               <div key={entry.id} className="border-l-4 border-black dark:border-white/20 pl-4 py-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-black uppercase text-sm bg-black text-white dark:bg-white dark:text-black px-2 italic">
