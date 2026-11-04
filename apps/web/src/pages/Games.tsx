@@ -10,8 +10,44 @@ interface GamesPageData {
   pinnedIds: number[];
 }
 
+const INITIAL_GAMES: SteamGame[] = [
+  {
+    appid: 346110,
+    name: "ARK: Survival Evolved",
+    playtime_forever: 110640,
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/capsule_184x69.jpg",
+  },
+  {
+    appid: 730,
+    name: "Counter-Strike 2",
+    playtime_forever: 46680,
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/capsule_184x69.jpg",
+  },
+  {
+    appid: 1030300,
+    name: "Hollow Knight: Silksong",
+    playtime_forever: 42,
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1030300/capsule_184x69.jpg",
+  },
+  {
+    appid: 413150,
+    name: "Stardew Valley",
+    playtime_forever: 19800,
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/capsule_184x69.jpg",
+  },
+  {
+    appid: 252490,
+    name: "Rust",
+    playtime_forever: 14700,
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/capsule_184x69.jpg",
+  },
+];
+
 export default function Games() {
-  const [data, setData] = useState<GamesPageData | null>(null);
+  const [data, setData] = useState<GamesPageData>({
+    allGames: INITIAL_GAMES,
+    pinnedIds: [346110, 730],
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

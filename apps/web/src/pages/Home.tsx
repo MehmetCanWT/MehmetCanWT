@@ -12,7 +12,7 @@ import NewsTicker from '../components/home/NewsTicker';
 import { useDiscordPresence } from '../hooks/useDiscordPresence';
 import type { AnimeEntry, SteamGame, NewsItem, GuestbookEntry, QuoteData } from '../types';
 
-const DISCORD_ID = "736294975760826438";
+const DISCORD_ID = "1245414098238177400";
 const FAVORITE_ANIME_ID = 21;
 
 interface HomeData {
@@ -36,10 +36,10 @@ const INITIAL_DATA: HomeData = {
     description: "Monkey D. Luffy sets out to become the King of the Pirates.",
   },
   topGame: {
-    appid: 730,
-    name: "Counter-Strike 2",
-    playtime_forever: 14280,
-    img_icon_url: "d0595ff02f5c79e6027c02b9e4a8b75960010078",
+    appid: 346110,
+    name: "ARK: Survival Evolved",
+    playtime_forever: 110640,
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/capsule_184x69.jpg",
   },
   news: [
     { title: "SYSTEM OPERATIONAL // MEHMETCANWT ARCHIVE ONLINE", source: "System" },

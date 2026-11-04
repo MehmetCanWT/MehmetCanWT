@@ -269,30 +269,100 @@ async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamG
   const cached = getCached<SteamGame[]>(cacheKey);
   if (cached) return cached;
 
-  if (!webKey) return FALLBACK_GAMES;
-
-  try {
-    const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${webKey}&steamid=${steamId}&format=json&include_appinfo=1&include_played_free_games=1`;
-    const res = await fetchWithTimeout(url, {}, 4000);
-    if (!res.ok) return FALLBACK_GAMES;
-
-    const data = await res.json();
-    const games = data?.response?.games;
-    if (!Array.isArray(games) || games.length === 0) return FALLBACK_GAMES;
-
-    const parsed: SteamGame[] = games.map((g: any) => ({
-      appid: g.appid,
-      name: g.name,
-      playtime_forever: g.playtime_forever || 0,
-      img_icon_url: g.img_icon_url || "",
-    }));
-
-    setCache(cacheKey, parsed, 3600);
-    return parsed;
-  } catch (e) {
-    console.error("Steam fetch error:", e);
-    return FALLBACK_GAMES;
+  // 1. If Web API Key is present, try official Steam Web API
+  if (webKey) {
+    try {
+      const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${webKey}&steamid=${steamId}&format=json&include_appinfo=1&include_played_free_games=1`;
+      const res = await fetchWithTimeout(url, {}, 4000);
+      if (res.ok) {
+        const data = await res.json();
+        const games = data?.response?.games;
+        if (Array.isArray(games) && games.length > 0) {
+          const parsed: SteamGame[] = games.map((g: any) => ({
+            appid: g.appid,
+            name: g.name,
+            playtime_forever: g.playtime_forever || 0,
+            img_icon_url: g.img_icon_url || "",
+          }));
+          setCache(cacheKey, parsed, 3600);
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Steam Web API fetch failed, falling back to public community scrape:", e);
+    }
   }
+
+  // 2. No Web Key needed! Scrape directly from public Steam Community profile
+  try {
+    const profileUrl = `https://steamcommunity.com/profiles/${steamId}`;
+    const res = await fetchWithTimeout(
+      profileUrl,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      },
+      4000
+    );
+
+    if (res.ok) {
+      const html = await res.text();
+      const scrapedGames: SteamGame[] = [];
+
+      // 2a. Favorite game showcase (e.g. ARK with 1,844 hrs)
+      const favMatch = html.match(
+        /class="favoritegame_showcase_game[\s\S]*?app\/(\d+)[\s\S]*?showcase_item_detail_title[\s\S]*?>\s*([^<]+)\s*<\/a>[\s\S]*?class="value">([\d,.]+)\s*<\/div>\s*<div class="label">Hours played/i
+      );
+      if (favMatch) {
+        const appid = parseInt(favMatch[1], 10);
+        const name = favMatch[2].trim();
+        const hours = parseFloat(favMatch[3].replace(/,/g, ""));
+        if (!isNaN(appid) && !isNaN(hours)) {
+          scrapedGames.push({
+            appid,
+            name,
+            playtime_forever: Math.round(hours * 60),
+            img_icon_url: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/capsule_184x69.jpg`,
+          });
+        }
+      }
+
+      // 2b. Recent games list (e.g. Counter-Strike 2 with 778 hrs, Silksong, etc.)
+      const recentRegex = /<div class="game_info">[\s\S]*?app\/(\d+)[\s\S]*?class="game_info_details">\s*([\d,.]+)\s*hrs on record[\s\S]*?class="game_name"><a class="whiteLink"[^>]*>([^<]+)<\/a>/gi;
+      let match;
+      while ((match = recentRegex.exec(html)) !== null) {
+        const appid = parseInt(match[1], 10);
+        const hours = parseFloat(match[2].replace(/,/g, ""));
+        const name = match[3].trim();
+        if (!isNaN(appid) && !scrapedGames.some((g) => g.appid === appid)) {
+          scrapedGames.push({
+            appid,
+            name,
+            playtime_forever: Math.round(hours * 60),
+            img_icon_url: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appid}/capsule_184x69.jpg`,
+          });
+        }
+      }
+
+      if (scrapedGames.length > 0) {
+        // Merge with fallbacks so the vault is rich with extra games if needed
+        const combined = [...scrapedGames];
+        for (const fb of FALLBACK_GAMES) {
+          if (!combined.some((g) => g.appid === fb.appid)) {
+            combined.push(fb);
+          }
+        }
+        setCache(cacheKey, combined, 3600);
+        return combined;
+      }
+    }
+  } catch (e) {
+    console.error("Steam public community scrape failed:", e);
+  }
+
+  return FALLBACK_GAMES;
 }
 
 // --- News Fetcher ---
@@ -539,8 +609,38 @@ export default async (req: Request, context: Context) => {
 
   // Route: /api/og/readme - Dynamic GitHub Profile README Image with Anime & Steam game images
   if (pathname === "/api/og/readme") {
+    let discordStatus = "ONLINE";
+    let discordColor = "#22c55e";
+
+    try {
+      const lanyardRes = await fetchWithTimeout(
+        "https://api.lanyard.rest/v1/users/1245414098238177400",
+        {},
+        2000
+      );
+      if (lanyardRes.ok) {
+        const lData = await lanyardRes.json();
+        const st = lData?.data?.discord_status;
+        if (st === "online") {
+          discordStatus = "ONLINE";
+          discordColor = "#22c55e";
+        } else if (st === "dnd") {
+          discordStatus = "DO NOT DISTURB";
+          discordColor = "#ef4444";
+        } else if (st === "idle") {
+          discordStatus = "AWAY";
+          discordColor = "#eab308";
+        } else if (st === "offline") {
+          discordStatus = "OFFLINE";
+          discordColor = "#71717a";
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     const animeCover = "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg";
-    const gameBanner = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/730/header.jpg";
+    const gameBanner = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/header.jpg";
 
     const svg = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 280" width="840" height="280">
@@ -563,8 +663,8 @@ export default async (req: Request, context: Context) => {
         <!-- Top Header Bar -->
         <rect x="30" y="25" width="780" height="40" fill="#000" rx="6" stroke="#3f3f46" stroke-width="2"/>
         <text x="45" y="52" fill="#fff" font-family="-apple-system, BlinkMacSystemFont, monospace" font-size="20" font-weight="900" font-style="italic">MEHMETCANWT // LIVE ARCHIVE</text>
-        <circle cx="750" cy="45" r="5" fill="#22c55e" />
-        <text x="765" y="49" fill="#22c55e" font-family="monospace" font-size="11" font-weight="bold">ONLINE</text>
+        <circle cx="710" cy="45" r="5" fill="${discordColor}" />
+        <text x="725" y="49" fill="${discordColor}" font-family="monospace" font-size="11" font-weight="bold">${discordStatus}</text>
 
         <!-- Left Column: Favorite Anime -->
         <rect x="30" y="80" width="110" height="150" fill="#18181b" rx="8" stroke="#3f3f46" stroke-width="2"/>
@@ -578,8 +678,8 @@ export default async (req: Request, context: Context) => {
         <rect x="440" y="80" width="220" height="120" fill="#18181b" rx="8" stroke="#3f3f46" stroke-width="2"/>
         <image href="${gameBanner}" x="440" y="80" width="220" height="120" preserveAspectRatio="xMidYMid slice" clip-path="url(#gameClip)"/>
         <text x="675" y="105" fill="#eab308" font-family="monospace" font-size="11" font-weight="bold">TOP MISSION</text>
-        <text x="675" y="132" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="18" font-weight="900">COUNTER-STRIKE 2</text>
-        <text x="675" y="155" fill="#a1a1aa" font-family="monospace" font-size="12">238 HOURS</text>
+        <text x="675" y="132" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="18" font-weight="900">ARK: SURVIVAL</text>
+        <text x="675" y="155" fill="#a1a1aa" font-family="monospace" font-size="12">1,844 HOURS</text>
         <text x="675" y="175" fill="#71717a" font-family="monospace" font-size="11">STATUS: MASTERED</text>
 
         <!-- Bottom Footer Status -->
