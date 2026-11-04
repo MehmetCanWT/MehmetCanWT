@@ -120,7 +120,7 @@ export default function AdminIndex() {
           <input 
             id="admin-password"
             type="password" 
-            placeholder="ACCESS CODE (1597532486)" 
+            placeholder="ACCESS CODE" 
             className="w-full border-3 border-black dark:border-white/30 p-3 font-black uppercase focus:bg-zinc-100 dark:focus:bg-zinc-800 outline-none bg-white dark:bg-zinc-900 dark:text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-sm tracking-wider"
             value={pass}
             onChange={(e) => setPass(e.target.value)}

@@ -16,7 +16,7 @@ import React from 'react';
 import { createHash, timingSafeEqual } from 'crypto';
 
 const isProd = process.env.NODE_ENV === 'production';
-const STEAM_ID = process.env.STEAM_ID || '76561198200466026';
+const STEAM_ID = process.env.STEAM_ID || '';
 
 if (!process.env.JWT_SECRET) {
   if (isProd) {

@@ -12,7 +12,6 @@ import NewsTicker from '../components/home/NewsTicker';
 import { useDiscordPresence } from '../hooks/useDiscordPresence';
 import type { AnimeEntry, SteamGame, NewsItem, GuestbookEntry, QuoteData } from '../types';
 
-const DISCORD_ID = "1245414098238177400";
 const FAVORITE_ANIME_ID = 21;
 
 interface HomeData {
@@ -43,7 +42,7 @@ const INITIAL_DATA: HomeData = {
   },
   news: [
     { title: "SYSTEM OPERATIONAL // MEHMETCANWT ARCHIVE ONLINE", source: "System" },
-    { title: "DISCORD & STEAM SYNCED SUCCESSFULLY", source: "Telemetry" },
+    { title: "DISCORD & STEAM SYNCED WITH REAL PROFILE DATA", source: "Telemetry" },
   ],
   guestbook: [
     {
@@ -70,7 +69,7 @@ const INITIAL_DATA: HomeData = {
 
 export default function Home() {
   const [data, setData] = useState<HomeData>(INITIAL_DATA);
-  const discord = useDiscordPresence(DISCORD_ID);
+  const discord = useDiscordPresence();
 
   const fetchGuestbook = useCallback(async () => {
     try {
@@ -132,12 +131,14 @@ export default function Home() {
     return a;
   }, []);
 
+  const canonicalUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
       <SEO 
         title="MehmetCanWT // Live Archive" 
         description="Personal Terminal & Archive of MehmetCanWT. Tracking Anime, Games, and Code with live Discord telemetry." 
-        url="https://mehmetcanwt.xyz"
+        url={canonicalUrl}
       />
       
       {/* Header Banner */}
@@ -170,16 +171,20 @@ export default function Home() {
       </header>
 
       {/* Main Grid Interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left 2 Cols: Anime, Steam & Guestbook */}
         <div className="lg:col-span-2 space-y-8">
           {/* Daily Quote Section */}
           <DailyQuote quote={data.dailyQuote} />
 
-          {/* Side by side: Favorite Anime & Top Game */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FavoriteAnime anime={data.favoriteAnime} />
-            <TopGame game={data.topGame} />
+          {/* Equal Height Side-by-side: Favorite Anime & Top Game */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div className="h-full">
+              <FavoriteAnime anime={data.favoriteAnime} />
+            </div>
+            <div className="h-full">
+              <TopGame game={data.topGame} />
+            </div>
           </div>
 
           {/* Guestbook Section */}
@@ -187,16 +192,16 @@ export default function Home() {
         </div>
 
         {/* Right 1 Col: Live Telemetry */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           <DiscordPresence discord={discord} />
 
           {/* Quick Info Panel */}
-          <div className="manga-panel p-6 space-y-4 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900">
+          <div className="manga-panel p-5 space-y-4 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900">
             <h4 className="font-black uppercase tracking-widest text-sm border-b-2 border-black dark:border-white/20 pb-2 flex items-center justify-between">
               <span>IDENTITY_VERIFIED</span>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </h4>
-            <div className="space-y-2.5 text-sm font-bold">
+            <div className="space-y-2 text-sm font-bold">
               <p className="flex justify-between">
                 <span className="text-zinc-500 font-mono text-xs">LOCATION:</span>
                 <span>TURKIYE 🇹🇷</span>
@@ -215,7 +220,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="pt-3 border-t-2 border-dashed border-zinc-200 dark:border-zinc-800">
+            <div className="pt-2 border-t-2 border-dashed border-zinc-200 dark:border-zinc-800">
               <Link
                 to="/admin"
                 className="text-xs font-black uppercase text-zinc-500 hover:text-black dark:hover:text-white transition-colors flex items-center justify-between"
@@ -228,7 +233,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Ticker at Bottom */}
+      {/* Slim Ticker at Bottom */}
       <NewsTicker news={data.news} />
     </div>
   );

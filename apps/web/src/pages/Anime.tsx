@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { BookOpen, ArrowLeft, Star, Search, Sparkles, Tv, CheckCircle2, PlayCircle } from 'lucide-react';
+import { BookOpen, ArrowLeft, Star, Search, Sparkles, Tv, CheckCircle2, PlayCircle, XCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import type { AnimeEntry, AnimeResponse } from '../types';
@@ -53,12 +53,15 @@ const INITIAL_ANIME: AnimeEntry[] = [
   },
 ];
 
+type FilterStatus = 'ALL' | 'COMPLETED' | 'CURRENT' | 'DROPPED' | 'PLANNING';
+
 export default function Anime() {
   const [data, setData] = useState<AnimePageData>({
     allAnime: INITIAL_ANIME,
     pinnedIds: [21],
   });
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('ALL');
 
   useEffect(() => {
     async function fetchData() {
@@ -68,13 +71,18 @@ export default function Anime() {
           const responseData = (await res.json()) as AnimeResponse;
           const animeList = Array.isArray(responseData?.allAnime) ? responseData.allAnime : [];
           const pinnedIds = Array.isArray(responseData?.pinnedIds) ? responseData.pinnedIds : [21];
+
+          // Sort primarily by userScore (stars), then averageScore
           const sorted = [...animeList].sort((a, b) => {
             const isPinnedA = pinnedIds.includes(a.id);
             const isPinnedB = pinnedIds.includes(b.id);
             if (isPinnedA && !isPinnedB) return -1;
             if (!isPinnedA && isPinnedB) return 1;
-            return (b.userScore || b.averageScore || 0) - (a.userScore || a.averageScore || 0);
+            const scoreA = a.userScore || a.averageScore || 0;
+            const scoreB = b.userScore || b.averageScore || 0;
+            return scoreB - scoreA;
           });
+
           if (sorted.length > 0) {
             setData({ allAnime: sorted, pinnedIds });
           }
@@ -87,57 +95,112 @@ export default function Anime() {
   }, []);
 
   const filteredAnime = useMemo(() => {
-    if (!search.trim()) return data.allAnime;
-    const q = search.toLowerCase();
-    return data.allAnime.filter((a) =>
-      (a.title.english && a.title.english.toLowerCase().includes(q)) ||
-      (a.title.romaji && a.title.romaji.toLowerCase().includes(q))
-    );
-  }, [data.allAnime, search]);
+    return data.allAnime.filter((a) => {
+      // Status filter
+      if (statusFilter !== 'ALL' && a.status?.toUpperCase() !== statusFilter) {
+        return false;
+      }
+      // Search filter
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        (a.title.english && a.title.english.toLowerCase().includes(q)) ||
+        (a.title.romaji && a.title.romaji.toLowerCase().includes(q))
+      );
+    });
+  }, [data.allAnime, search, statusFilter]);
+
+  const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/anime` : '';
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
-      <SEO title="Anime Vault // MehmetCanWT" description="Personal anime tracking, scores, and series archives." url="https://mehmetcanwt.xyz/anime" />
-      
+      <SEO
+        title="Anime Vault // MehmetCanWT"
+        description="Personal anime tracking, scores, and series archives."
+        url={canonicalUrl}
+      />
+
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <Link to="/" className="manga-panel flex items-center gap-2 font-black uppercase hover:bg-black hover:text-white transition-all py-2 px-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+        <Link
+          to="/"
+          className="manga-panel flex items-center gap-2 font-black uppercase hover:bg-black hover:text-white transition-all py-2 px-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] bg-white dark:bg-zinc-900"
+        >
           <ArrowLeft size={20} /> Back
         </Link>
-        
+
         <div className="flex items-center gap-4 flex-wrap">
           <div className="manga-panel flex items-center gap-2 font-black uppercase py-2 px-4 text-xs bg-rose-500 text-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
             <Sparkles size={14} />
             <span>{data.allAnime.length} ENTRIES LOGGED</span>
           </div>
           <div className="manga-title text-3xl flex items-center gap-2 uppercase italic">
-            <BookOpen size={28} /> Anime Vault
+            <BookOpen size={28} className="text-rose-500" /> Anime Vault
           </div>
         </div>
       </header>
 
-      {/* Search Bar */}
-      <div className="manga-panel p-3 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900 flex items-center gap-3">
-        <Search size={20} className="text-zinc-500 shrink-0 ml-1" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="SEARCH ANIME ARCHIVE (E.G. ONE PIECE, ATTACK ON TITAN)..."
-          className="w-full bg-transparent outline-none font-bold uppercase text-sm tracking-wider text-black dark:text-white placeholder:text-zinc-400"
-        />
-        {search && (
-          <button onClick={() => setSearch('')} className="text-xs font-black uppercase px-2 py-1 bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white">
-            CLEAR
-          </button>
-        )}
+      {/* Filter Tabs & Search Bar */}
+      <div className="space-y-3">
+        {/* Status Tabs: ALL, COMPLETED, CURRENT, PLANNING, DROPPED */}
+        <div className="flex flex-wrap gap-2">
+          {(['ALL', 'COMPLETED', 'CURRENT', 'PLANNING', 'DROPPED'] as FilterStatus[]).map((tab) => {
+            const count =
+              tab === 'ALL'
+                ? data.allAnime.length
+                : data.allAnime.filter((a) => a.status?.toUpperCase() === tab).length;
+            const active = statusFilter === tab;
+
+            return (
+              <button
+                key={tab}
+                onClick={() => setStatusFilter(tab)}
+                className={`manga-panel text-xs font-black uppercase px-3 py-1.5 border-2 border-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 ${
+                  active
+                    ? 'bg-rose-500 text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                    : 'bg-white dark:bg-zinc-900 text-black dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                <span>{tab}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                    active ? 'bg-black text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search Input */}
+        <div className="manga-panel p-3 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900 flex items-center gap-3">
+          <Search size={20} className="text-zinc-500 shrink-0 ml-1" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="SEARCH ANIME ARCHIVE (E.G. ONE PIECE, ATTACK ON TITAN)..."
+            className="w-full bg-transparent outline-none font-bold uppercase text-sm tracking-wider text-black dark:text-white placeholder:text-zinc-400"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="text-xs font-black uppercase px-2 py-1 bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white"
+            >
+              CLEAR
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Grid: Colorful Anime Cards (NO GRAYSCALE) */}
+      {/* Grid: Vibrant Anime Cards with Star Rating */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredAnime.map((anime) => {
           const isPinned = data.pinnedIds.includes(anime.id);
-          const score = anime.userScore || anime.averageScore;
+          const rawScore = anime.userScore || anime.averageScore || 0;
+          const stars = Math.min(10, Math.max(1, Math.round(rawScore / 10)));
 
           return (
             <div
@@ -163,11 +226,12 @@ export default function Anime() {
                       <span>PINNED FAVORITE</span>
                     </div>
                   )}
-                  {score && (
-                    <div className="absolute bottom-2 right-2 bg-black/85 text-yellow-400 px-2 py-0.5 text-xs font-black font-mono border border-yellow-400">
-                      {score}%
-                    </div>
-                  )}
+
+                  {/* Star Rating Badge (Replaced percentage with visual stars) */}
+                  <div className="absolute bottom-2 right-2 bg-black/90 text-yellow-400 px-2 py-0.5 text-xs font-black font-mono border border-yellow-400 flex items-center gap-1 shadow-md">
+                    <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                    <span>{stars}/10</span>
+                  </div>
                 </div>
 
                 {/* Info & Badges */}
@@ -184,11 +248,23 @@ export default function Anime() {
                       className={`flex items-center gap-1 px-1.5 py-0.5 ${
                         anime.status === 'CURRENT'
                           ? 'bg-emerald-500 text-black font-black'
+                          : anime.status === 'COMPLETED'
+                          ? 'bg-blue-500 text-white font-black'
+                          : anime.status === 'DROPPED'
+                          ? 'bg-rose-600 text-white font-black'
                           : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                       }`}
                     >
-                      {anime.status === 'CURRENT' ? <PlayCircle size={11} /> : <CheckCircle2 size={11} />}
-                      {anime.status || 'WATCHED'}
+                      {anime.status === 'CURRENT' ? (
+                        <PlayCircle size={11} />
+                      ) : anime.status === 'COMPLETED' ? (
+                        <CheckCircle2 size={11} />
+                      ) : anime.status === 'DROPPED' ? (
+                        <XCircle size={11} />
+                      ) : (
+                        <Clock size={11} />
+                      )}
+                      {anime.status || 'LOGGED'}
                     </span>
                   </div>
 

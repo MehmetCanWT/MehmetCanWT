@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1597532486
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=mehmetcanwt
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -33,7 +33,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://postgres:1597532486@db:5432/mehmetcanwt?schema=public
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/mehmetcanwt?schema=public}
     working_dir: /app/packages/db
     command: ["bun", "run", "push"]
     networks:
@@ -53,7 +53,7 @@ services:
       migration:
         condition: service_completed_successfully
     environment:
-      - DATABASE_URL=postgresql://postgres:1597532486@db:5432/mehmetcanwt?schema=public
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/mehmetcanwt?schema=public}
       - REDIS_URL=redis://redis:6379
       - WEB_KEY=${WEB_KEY}
       - LANYARD_API_KEY=${LANYARD_API_KEY}

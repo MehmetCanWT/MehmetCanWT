@@ -27,7 +27,7 @@ export async function getMixedNews(): Promise<NewsItem[]> {
 
       // Static gaming headlines as placeholders — replace with a real API when available
       const gamingNews: NewsItem[] = [
-        { title: "GTA VI OFFICIAL RELEASE DATE ANNOUNCED", source: "Gaming" },
+        { title: "ARK: SURVIVAL ASCENDED & CS2 MAJOR PATCH NOTES LIVE", source: "Gaming" },
         { title: "STEAM SUMMER SALE 2026 IS LIVE NOW", source: "Gaming" },
         { title: "ELDEN RING NIGHTREIGN LAUNCHES TO CRITICAL ACCLAIM", source: "Gaming" },
         { title: "NINTENDO SWITCH 2 NOW AVAILABLE WORLDWIDE", source: "Gaming" },

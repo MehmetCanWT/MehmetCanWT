@@ -5,12 +5,36 @@ const MAX_RECONNECT_ATTEMPTS = 10;
 const INITIAL_RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_DELAY = 30000;
 
-export function useDiscordPresence(discordId: string) {
+export function useDiscordPresence(initialId?: string) {
   const [discordData, setDiscordData] = useState<DiscordData | null>(null);
+  const [activeId, setActiveId] = useState<string>(
+    initialId || (import.meta.env.VITE_DISCORD_ID as string) || ''
+  );
   const wsRef = useRef<WebSocket | null>(null);
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Initial HTTP fetch to get instant state without waiting for WebSocket handshake
+  useEffect(() => {
+    async function fetchInstantPresence() {
+      try {
+        const res = await fetch('/api/lanyard');
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data) {
+            setDiscordData(json.data);
+          }
+          if (json?.discord_id && !activeId) {
+            setActiveId(json.discord_id);
+          }
+        }
+      } catch (err) {
+        console.warn('Initial Lanyard HTTP sync failed:', err);
+      }
+    }
+    fetchInstantPresence();
+  }, [activeId]);
 
   const cleanup = useCallback(() => {
     if (heartbeatIntervalRef.current) {
@@ -28,6 +52,7 @@ export function useDiscordPresence(discordId: string) {
   }, []);
 
   const connectLanyard = useCallback(() => {
+    if (!activeId) return;
     cleanup();
     
     const ws = new WebSocket('wss://api.lanyard.rest/socket');
@@ -39,7 +64,7 @@ export function useDiscordPresence(discordId: string) {
 
         if (msg.op === 1) {
           const interval = msg.d.heartbeat_interval;
-          ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: discordId } }));
+          ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: activeId } }));
           
           if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = setInterval(() => {
@@ -79,12 +104,14 @@ export function useDiscordPresence(discordId: string) {
         reconnectTimeoutRef.current = setTimeout(connectLanyard, delay);
       }
     };
-  }, [discordId, cleanup]);
+  }, [activeId, cleanup]);
 
   useEffect(() => {
-    connectLanyard();
+    if (activeId) {
+      connectLanyard();
+    }
     return cleanup;
-  }, [connectLanyard, cleanup]);
+  }, [activeId, connectLanyard, cleanup]);
 
   return discordData;
 }

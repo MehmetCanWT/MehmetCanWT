@@ -71,22 +71,38 @@ export interface DiscordUser {
   avatar: string;
   display_name?: string;
   global_name?: string;
+  avatar_decoration_data?: {
+    asset?: string;
+    sku_id?: string;
+  };
+  primary_guild?: {
+    badge?: string;
+    tag?: string;
+  };
 }
 
 export interface DiscordActivity {
   type: number;
   name: string;
   details?: string;
+  details_url?: string;
   state?: string;
   application_id?: string;
   id?: string;
+  buttons?: string[];
+  timestamps?: {
+    start?: number;
+    end?: number;
+  };
   emoji?: {
     name?: string;
     id?: string;
   };
   assets?: {
     large_image?: string;
+    large_text?: string;
     small_image?: string;
+    small_text?: string;
   };
 }
 

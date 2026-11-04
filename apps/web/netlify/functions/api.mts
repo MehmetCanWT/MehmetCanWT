@@ -41,7 +41,7 @@ interface SteamProfile {
 }
 
 const DEFAULT_STEAM_PROFILE: SteamProfile = {
-  steamid: "76561198200466026",
+  steamid: process.env.STEAM_ID || "",
   personaname: "FemboyMemo",
   avatar: "https://shared.akamai.steamstatic.com/community_assets/images/items/1385730/b2bba5dcd8e2942ec5ba7639ea6622753e6005ad.gif",
   avatarframe: "https://shared.fastly.steamstatic.com/community_assets/images/items/527230/18ec71cb7da1182d32164890bac8411a09e26e46.png",
@@ -143,37 +143,127 @@ const FALLBACK_QUOTES: QuoteData[] = [
   },
 ];
 
-// Fallback popular games with accurate playtimes
+// Curated verified games with accurate playtimes from SteamDB profile
 const FALLBACK_GAMES: SteamGame[] = [
+  {
+    appid: 346110,
+    name: "ARK: Survival Evolved",
+    playtime_forever: 110640, // 1,844.0 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/capsule_184x69.jpg",
+  },
+  {
+    appid: 2399830,
+    name: "ARK: Survival Ascended",
+    playtime_forever: 75696, // 1,261.6 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/capsule_184x69.jpg",
+  },
+  {
+    appid: 1172470,
+    name: "Apex Legends",
+    playtime_forever: 47064, // 784.4 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172470/capsule_184x69.jpg",
+  },
   {
     appid: 730,
     name: "Counter-Strike 2",
-    playtime_forever: 14280,
-    img_icon_url: "d0595ff02f5c79e6027c02b9e4a8b75960010078",
+    playtime_forever: 46692, // 778.2 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/capsule_184x69.jpg",
   },
   {
     appid: 413150,
     name: "Stardew Valley",
-    playtime_forever: 8400,
-    img_icon_url: "075fb88950c40625345719e73d3a0179a613cfcf",
+    playtime_forever: 40752, // 679.2 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/capsule_184x69.jpg",
   },
   {
-    appid: 252490,
-    name: "Rust",
-    playtime_forever: 5600,
-    img_icon_url: "a80c8680fa2a91216503c05943b5937409f58330",
+    appid: 359550,
+    name: "Tom Clancy's Rainbow Six Siege",
+    playtime_forever: 33066, // 551.1 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/359550/capsule_184x69.jpg",
   },
   {
-    appid: 1245620,
-    name: "ELDEN RING",
-    playtime_forever: 7200,
-    img_icon_url: "17b8b209a7d96eb9729a6b0c2a233b860fb7f8a7",
+    appid: 252950,
+    name: "Rocket League",
+    playtime_forever: 26598, // 443.3 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252950/capsule_184x69.jpg",
   },
   {
-    appid: 1091500,
-    name: "Cyberpunk 2077",
-    playtime_forever: 4900,
-    img_icon_url: "a68735391a26b6f790c660443e9ec4ddcaae2c64",
+    appid: 1149720,
+    name: "Hentai Girl",
+    playtime_forever: 15492, // 258.2 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1149720/capsule_184x69.jpg",
+  },
+  {
+    appid: 2424850,
+    name: "TBH: Task Bar Hero",
+    playtime_forever: 10494, // 174.9 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2424850/capsule_184x69.jpg",
+  },
+  {
+    appid: 444090,
+    name: "Paladins",
+    playtime_forever: 4152, // 69.2 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/444090/capsule_184x69.jpg",
+  },
+  {
+    appid: 1222670,
+    name: "The Sims™ 4",
+    playtime_forever: 3978, // 66.3 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222670/capsule_184x69.jpg",
+  },
+  {
+    appid: 322330,
+    name: "Don't Starve Together",
+    playtime_forever: 3306, // 55.1 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/capsule_184x69.jpg",
+  },
+  {
+    appid: 291550,
+    name: "Brawlhalla",
+    playtime_forever: 2826, // 47.1 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/291550/capsule_184x69.jpg",
+  },
+  {
+    appid: 1293830,
+    name: "Forza Horizon 4",
+    playtime_forever: 2820, // 47.0 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1293830/capsule_184x69.jpg",
+  },
+  {
+    appid: 648800,
+    name: "Raft",
+    playtime_forever: 2778, // 46.3 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/648800/capsule_184x69.jpg",
+  },
+  {
+    appid: 292030,
+    name: "The Witcher 3: Wild Hunt — Remastered",
+    playtime_forever: 2760, // 46.0 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/292030/capsule_184x69.jpg",
+  },
+  {
+    appid: 361420,
+    name: "ASTRONEER",
+    playtime_forever: 2514, // 41.9 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/capsule_184x69.jpg",
+  },
+  {
+    appid: 1231660,
+    name: "Hentai Girl Linda",
+    playtime_forever: 2244, // 37.4 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1231660/capsule_184x69.jpg",
+  },
+  {
+    appid: 524220,
+    name: "NieR:Automata™",
+    playtime_forever: 1926, // 32.1 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/524220/capsule_184x69.jpg",
+  },
+  {
+    appid: 49520,
+    name: "Borderlands 2",
+    playtime_forever: 1914, // 31.9 hrs
+    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/49520/capsule_184x69.jpg",
   },
 ];
 
@@ -453,7 +543,7 @@ async function fetchNews(): Promise<NewsItem[]> {
     }
 
     const gamingNews: NewsItem[] = [
-      { title: "GTA VI OFFICIAL TRAILER & ENGINE SHOWCASE", source: "Gaming" },
+      { title: "ARK: SURVIVAL ASCENDED & CS2 MAJOR PATCH NOTES LIVE", source: "Gaming" },
       { title: "STEAM SUMMER SALE IS LIVE WORLDWIDE", source: "Steam" },
       { title: "ELDEN RING NIGHTREIGN EXPANSION ANNOUNCED", source: "FromSoft" },
       { title: "NINTENDO SWITCH 2 RECORD SALES TOPPING CHARTS", source: "Gaming" },
@@ -590,7 +680,7 @@ export default async (req: Request, context: Context) => {
 
   // Route: /api/games
   if (pathname === "/api/games" || pathname.startsWith("/api/games/")) {
-    const steamId = process.env.STEAM_ID || "76561198200466026";
+    const steamId = process.env.STEAM_ID || "";
     const webKey = process.env.WEB_KEY || "";
     const steamData = await fetchSteamData(steamId, webKey);
     return json({
@@ -598,6 +688,24 @@ export default async (req: Request, context: Context) => {
       allGames: steamData.games,
       pinnedIds: [346110, 730], // ARK and Counter-Strike 2 pinned
     });
+  }
+
+  // Route: /api/lanyard
+  if (pathname === "/api/lanyard" || pathname === "/api/discord") {
+    const discordId = process.env.DISCORD_ID || "";
+    if (!discordId) {
+      return json({ error: "DISCORD_ID environment variable not set." }, 404);
+    }
+    try {
+      const lanyardRes = await fetchWithTimeout(`https://api.lanyard.rest/v1/users/${discordId}`, {}, 3500);
+      if (lanyardRes.ok) {
+        const lData = await lanyardRes.json();
+        return json({ ...lData, discord_id: discordId });
+      }
+    } catch (e) {
+      console.warn("Lanyard proxy fetch failed:", e);
+    }
+    return json({ error: "Failed to fetch Discord telemetry" }, 502);
   }
 
   // Route: /api/news
@@ -649,8 +757,8 @@ export default async (req: Request, context: Context) => {
     }
     try {
       const body = (await req.json()) as any;
-      const expectedPassword = process.env.ADMIN_PASSWORD || "1597532486";
-      if (!body?.password || body.password !== expectedPassword) {
+      const expectedPassword = process.env.ADMIN_PASSWORD || "";
+      if (!expectedPassword || !body?.password || body.password !== expectedPassword) {
         return json({ error: "Invalid credentials." }, 401);
       }
       return json({ success: true, message: "Authorized" });
@@ -674,10 +782,11 @@ export default async (req: Request, context: Context) => {
   // Route: /api/admin/fresh-data (0'dan her şeyi yenileyen ve cache'i temizleyen route)
   if (pathname === "/api/admin/fresh-data") {
     memoryCache.clear();
+    const steamId = process.env.STEAM_ID || "";
 
     const [anime, steamData, quote] = await Promise.all([
       fetchAniList("MehmetCanWT"),
-      fetchSteamData("76561198200466026", process.env.WEB_KEY),
+      fetchSteamData(steamId, process.env.WEB_KEY),
       fetchDailyQuote(),
     ]);
 
@@ -700,31 +809,34 @@ export default async (req: Request, context: Context) => {
     let discordStatus = "ONLINE";
     let discordColor = "#22c55e";
 
-    try {
-      const lanyardRes = await fetchWithTimeout(
-        "https://api.lanyard.rest/v1/users/1245414098238177400",
-        {},
-        2000
-      );
-      if (lanyardRes.ok) {
-        const lData = await lanyardRes.json();
-        const st = lData?.data?.discord_status;
-        if (st === "online") {
-          discordStatus = "ONLINE";
-          discordColor = "#22c55e";
-        } else if (st === "dnd") {
-          discordStatus = "DO NOT DISTURB";
-          discordColor = "#ef4444";
-        } else if (st === "idle") {
-          discordStatus = "AWAY";
-          discordColor = "#eab308";
-        } else if (st === "offline") {
-          discordStatus = "OFFLINE";
-          discordColor = "#71717a";
+    const discordId = process.env.DISCORD_ID || "";
+    if (discordId) {
+      try {
+        const lanyardRes = await fetchWithTimeout(
+          `https://api.lanyard.rest/v1/users/${discordId}`,
+          {},
+          2000
+        );
+        if (lanyardRes.ok) {
+          const lData = await lanyardRes.json();
+          const st = lData?.data?.discord_status;
+          if (st === "online") {
+            discordStatus = "ONLINE";
+            discordColor = "#22c55e";
+          } else if (st === "dnd") {
+            discordStatus = "DO NOT DISTURB";
+            discordColor = "#ef4444";
+          } else if (st === "idle") {
+            discordStatus = "AWAY";
+            discordColor = "#eab308";
+          } else if (st === "offline") {
+            discordStatus = "OFFLINE";
+            discordColor = "#71717a";
+          }
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     const animeCover = "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg";
