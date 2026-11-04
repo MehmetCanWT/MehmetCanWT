@@ -507,6 +507,36 @@ export default async (req: Request, context: Context) => {
     return json(memoryGuestbook);
   }
 
+  // Route: /api/admin/login
+  if (pathname === "/api/admin/login") {
+    if (req.method !== "POST") {
+      return json({ error: "Method not allowed" }, 405);
+    }
+    try {
+      const body = (await req.json()) as any;
+      const expectedPassword = process.env.ADMIN_PASSWORD || "1597532486";
+      if (!body?.password || body.password !== expectedPassword) {
+        return json({ error: "Invalid credentials." }, 401);
+      }
+      return json({ success: true, message: "Authorized" });
+    } catch {
+      return json({ error: "Invalid request body." }, 400);
+    }
+  }
+
+  // Route: /api/admin/logout
+  if (pathname === "/api/admin/logout") {
+    return json({ success: true });
+  }
+
+  // Route: /api/admin/quote/force-update
+  if (pathname === "/api/admin/quote/force-update") {
+    cachedQuote = null;
+    quoteCacheExpires = 0;
+    const freshQuote = await fetchDailyQuote();
+    return json({ success: true, quote: freshQuote });
+  }
+
   // Route: /api/og/readme - Dynamic GitHub Profile README Image with Anime & Steam game images
   if (pathname === "/api/og/readme") {
     const animeCover = "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg";
