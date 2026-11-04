@@ -219,7 +219,7 @@ export default function Code() {
           return (
             <div 
               key={project.title} 
-              className="manga-panel flex flex-col justify-between h-full bg-white dark:bg-zinc-900 group relative overflow-hidden"
+              className="manga-panel flex flex-col justify-between h-full bg-white dark:bg-zinc-900 group relative overflow-hidden border-3 border-black p-6 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.2)] transition-all duration-300 hover:-translate-y-1.5"
             >
               {/* Star Badge Pin */}
               <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black text-white dark:bg-white dark:text-black border-2 border-black font-black text-xs">

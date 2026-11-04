@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { api } from '../lib/eden';
 
 interface GuestbookFormProps {
   onSuccess: () => void;
@@ -19,17 +18,21 @@ export default function GuestbookForm({ onSuccess }: GuestbookFormProps) {
     const message = formData.get("message") as string;
 
     try {
-      const result = await api.api.guestbook.post({ username, message });
+      const res = await fetch('/api/guestbook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, message }),
+      });
+      const data = await res.json();
 
-      if (result.data && (result.data as { success?: boolean }).success) {
+      if (res.ok && data.success) {
         setStatus("success");
         (e.target as HTMLFormElement).reset();
         onSuccess();
         setTimeout(() => setStatus("idle"), 3000);
       } else {
         setStatus("error");
-        const data = result.data as { error?: string } | null;
-        setErrorMsg(data?.error || result.error?.message || "An error occurred");
+        setErrorMsg(data?.error || "An error occurred");
       }
     } catch (err) {
       setStatus("error");

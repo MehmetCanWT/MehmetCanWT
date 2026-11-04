@@ -191,27 +191,38 @@ export default function Home() {
           <DiscordPresence discord={discord} />
 
           {/* Quick Info Panel */}
-          <div className="manga-panel p-6 space-y-4">
-            <h4 className="font-black uppercase tracking-widest text-sm border-b-2 border-black pb-2">
-              IDENTITY_VERIFIED
+          <div className="manga-panel p-6 space-y-4 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] bg-white dark:bg-zinc-900">
+            <h4 className="font-black uppercase tracking-widest text-sm border-b-2 border-black dark:border-white/20 pb-2 flex items-center justify-between">
+              <span>IDENTITY_VERIFIED</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </h4>
-            <div className="space-y-2 text-sm font-bold">
+            <div className="space-y-2.5 text-sm font-bold">
               <p className="flex justify-between">
-                <span className="text-gray-400">LOCATION:</span>
-                <span>TURKIYE</span>
+                <span className="text-zinc-500 font-mono text-xs">LOCATION:</span>
+                <span>TURKIYE 🇹🇷</span>
               </p>
               <p className="flex justify-between">
-                <span className="text-gray-400">ROLE:</span>
-                <span>FULLSTACK_RENEGADE</span>
+                <span className="text-zinc-500 font-mono text-xs">ROLE:</span>
+                <span>FULLSTACK ARCHITECT</span>
               </p>
               <p className="flex justify-between">
-                <span className="text-gray-400">STATUS:</span>
-                <span className="text-green-500">EVOLVING</span>
+                <span className="text-zinc-500 font-mono text-xs">STATUS:</span>
+                <span className="text-emerald-500">EVOLVING</span>
               </p>
               <p className="flex justify-between">
-                <span className="text-gray-400">UPLINK:</span>
-                <span className="text-blue-500">ACTIVE</span>
+                <span className="text-zinc-500 font-mono text-xs">SYSTEM:</span>
+                <span className="text-blue-500">NETLIFY DISTRIBUTED</span>
               </p>
+            </div>
+
+            <div className="pt-3 border-t-2 border-dashed border-zinc-200 dark:border-zinc-800">
+              <Link
+                to="/admin"
+                className="text-xs font-black uppercase text-zinc-500 hover:text-black dark:hover:text-white transition-colors flex items-center justify-between"
+              >
+                <span>ADMIN TERMINAL</span>
+                <span>&rarr;</span>
+              </Link>
             </div>
           </div>
         </div>

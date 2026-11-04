@@ -23,7 +23,23 @@ export interface SteamGame {
   img_icon_url: string;
 }
 
+export interface SteamProfile {
+  steamid: string;
+  personaname: string;
+  profileurl?: string;
+  avatar: string;
+  avatarframe?: string;
+  level: number;
+  totalHours: number;
+  accountValueUsd?: number;
+  backgroundVideoWebm?: string;
+  backgroundVideoMp4?: string;
+  backgroundPoster?: string;
+  lastUpdated?: string;
+}
+
 export interface GamesResponse {
+  profile?: SteamProfile;
   allGames: SteamGame[];
   pinnedIds: number[];
 }
@@ -53,6 +69,8 @@ export interface DiscordUser {
   id: string;
   username: string;
   avatar: string;
+  display_name?: string;
+  global_name?: string;
 }
 
 export interface DiscordActivity {
@@ -62,6 +80,10 @@ export interface DiscordActivity {
   state?: string;
   application_id?: string;
   id?: string;
+  emoji?: {
+    name?: string;
+    id?: string;
+  };
   assets?: {
     large_image?: string;
     small_image?: string;
@@ -75,6 +97,7 @@ export interface DiscordData {
   spotify?: {
     song: string;
     artist: string;
+    album?: string;
     album_art_url: string;
   };
 }

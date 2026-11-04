@@ -84,7 +84,7 @@ export default function AdminGames() {
               {data.pinnedIds.includes(game.appid) ? <Star className="text-pink-600 fill-pink-600" size={20} /> : <StarOff size={20} />}
             </button>
             <div className="aspect-video border-2 border-black dark:border-white/20 overflow-hidden mb-2 bg-black">
-               <img src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={game.name} loading="lazy" />
+               <img src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`} className="w-full h-full object-cover group-hover:scale-105 transition-all" alt={game.name} loading="lazy" />
             </div>
             <h3 className="font-black uppercase text-sm line-clamp-2 leading-tight">{game.name}</h3>
             <p className="text-[10px] font-bold mt-1 opacity-50 uppercase">APPID: {game.appid} // {(game.playtime_forever / 60).toFixed(0)}H</p>

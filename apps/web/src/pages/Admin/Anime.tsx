@@ -84,7 +84,7 @@ export default function AdminAnime() {
               {data.pinnedIds.includes(anime.id) ? <Star className="text-purple-600 fill-purple-600" size={20} /> : <StarOff size={20} />}
             </button>
             <div className="aspect-[3/4] border-2 border-black dark:border-white/20 overflow-hidden mb-2 bg-black">
-               <img src={anime.coverImage.large} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt={anime.title.english || anime.title.romaji} loading="lazy" />
+               <img src={anime.coverImage.large} className="w-full h-full object-cover group-hover:scale-105 transition-all" alt={anime.title.english || anime.title.romaji} loading="lazy" />
             </div>
             <h3 className="font-black uppercase text-sm line-clamp-2 leading-tight">{anime.title.english || anime.title.romaji}</h3>
             <p className="text-[10px] font-bold mt-1 opacity-50 uppercase">ID: {anime.id} // {anime.status}</p>

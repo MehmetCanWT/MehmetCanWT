@@ -26,6 +26,34 @@ interface SteamGame {
   img_icon_url: string;
 }
 
+interface SteamProfile {
+  steamid: string;
+  personaname: string;
+  avatar: string;
+  avatarframe?: string;
+  level: number;
+  totalHours: number;
+  accountValueUsd?: number;
+  backgroundVideoWebm?: string;
+  backgroundVideoMp4?: string;
+  backgroundPoster?: string;
+  lastUpdated: string;
+}
+
+const DEFAULT_STEAM_PROFILE: SteamProfile = {
+  steamid: "76561198200466026",
+  personaname: "FemboyMemo",
+  avatar: "https://shared.akamai.steamstatic.com/community_assets/images/items/1385730/b2bba5dcd8e2942ec5ba7639ea6622753e6005ad.gif",
+  avatarframe: "https://shared.fastly.steamstatic.com/community_assets/images/items/527230/18ec71cb7da1182d32164890bac8411a09e26e46.png",
+  level: 54,
+  totalHours: 8901,
+  accountValueUsd: 585,
+  backgroundVideoWebm: "https://shared.akamai.steamstatic.com/community_assets/images/items/2070850/7890df00a25ba9bbb8947df4205e04c88006852b.webm",
+  backgroundVideoMp4: "https://shared.akamai.steamstatic.com/community_assets/images/items/2070850/8225c97a6365c6fefdd41afc76012c1e117fa3a2.mp4",
+  backgroundPoster: "https://shared.akamai.steamstatic.com/community_assets/images/items/2070850/468af81383083392a90b6434813cbd741c3da7cf.jpg",
+  lastUpdated: new Date().toISOString(),
+};
+
 interface NewsItem {
   title: string;
   source: string;
@@ -263,13 +291,16 @@ async function fetchAniList(userName: string = "MehmetCanWT"): Promise<AnimeEntr
   }
 }
 
-// --- Steam Fetcher ---
-async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamGame[]> {
-  const cacheKey = `steam-${steamId}`;
-  const cached = getCached<SteamGame[]>(cacheKey);
+// --- Steam Fetcher with 6-Hour Cache & Dynamic Profile Scraper ---
+async function fetchSteamData(steamId: string, webKey?: string): Promise<{ profile: SteamProfile; games: SteamGame[] }> {
+  const cacheKey = `steam-full-${steamId}`;
+  const cached = getCached<{ profile: SteamProfile; games: SteamGame[] }>(cacheKey);
   if (cached) return cached;
 
-  // 1. If Web API Key is present, try official Steam Web API
+  let profile: SteamProfile = { ...DEFAULT_STEAM_PROFILE, steamid: steamId };
+  let scrapedGames: SteamGame[] = [];
+
+  // 1. Try official Steam Web API if key is available
   if (webKey) {
     try {
       const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${webKey}&steamid=${steamId}&format=json&include_appinfo=1&include_played_free_games=1`;
@@ -278,24 +309,22 @@ async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamG
         const data = await res.json();
         const games = data?.response?.games;
         if (Array.isArray(games) && games.length > 0) {
-          const parsed: SteamGame[] = games.map((g: any) => ({
+          scrapedGames = games.map((g: any) => ({
             appid: g.appid,
             name: g.name,
             playtime_forever: g.playtime_forever || 0,
             img_icon_url: g.img_icon_url || "",
           }));
-          setCache(cacheKey, parsed, 3600);
-          return parsed;
         }
       }
     } catch (e) {
-      console.warn("Steam Web API fetch failed, falling back to public community scrape:", e);
+      console.warn("Steam Web API fetch failed:", e);
     }
   }
 
-  // 2. No Web Key needed! Scrape directly from public Steam Community profile
+  // 2. Scrape live Steam Community profile for animated background video, real hours, avatar, and games
   try {
-    const profileUrl = `https://steamcommunity.com/profiles/${steamId}`;
+    const profileUrl = `https://steamcommunity.com/id/FemboyMemo`;
     const res = await fetchWithTimeout(
       profileUrl,
       {
@@ -304,14 +333,43 @@ async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamG
           "Accept-Language": "en-US,en;q=0.9",
         },
       },
-      4000
+      4500
     );
 
     if (res.ok) {
       const html = await res.text();
-      const scrapedGames: SteamGame[] = [];
 
-      // 2a. Favorite game showcase (e.g. ARK with 1,844 hrs)
+      // Persona Name
+      const nameMatch = html.match(/<span class="actual_persona_name">([^<]+)<\/span>/);
+      if (nameMatch) profile.personaname = nameMatch[1].trim();
+
+      // Player Level
+      const levelMatch = html.match(/<span class="friendPlayerLevelNum">(\d+)<\/span>/);
+      if (levelMatch) profile.level = parseInt(levelMatch[1], 10);
+
+      // Animated Avatar GIF
+      const avatarMatch = html.match(/<div class="playerAvatarAutoSizeInner">[\s\S]*?<img [^>]*srcset="([^"]+)"|<div class="playerAvatarAutoSizeInner">[\s\S]*?<img src="([^"]+)"/);
+      if (avatarMatch) {
+        profile.avatar = avatarMatch[1] || avatarMatch[2];
+      }
+
+      // Animated Avatar Frame
+      const frameMatch = html.match(/class="profile_avatar_frame"[\s\S]*?<img src="([^"]+)"/);
+      if (frameMatch) {
+        profile.avatarframe = frameMatch[1];
+      }
+
+      // Steam Points Shop Background Animated Video (MP4 / WebM / Poster)
+      const posterMatch = html.match(/class="profile_animated_background"[\s\S]*?poster="([^"]+)"/);
+      if (posterMatch) profile.backgroundPoster = posterMatch[1];
+
+      const webmMatch = html.match(/class="profile_animated_background"[\s\S]*?<source src="([^"]+\.webm)"/);
+      if (webmMatch) profile.backgroundVideoWebm = webmMatch[1];
+
+      const mp4Match = html.match(/class="profile_animated_background"[\s\S]*?<source src="([^"]+\.mp4)"/);
+      if (mp4Match) profile.backgroundVideoMp4 = mp4Match[1];
+
+      // Favorite game showcase (ARK: Survival Evolved - 1,844 hrs)
       const favMatch = html.match(
         /class="favoritegame_showcase_game[\s\S]*?app\/(\d+)[\s\S]*?showcase_item_detail_title[\s\S]*?>\s*([^<]+)\s*<\/a>[\s\S]*?class="value">([\d,.]+)\s*<\/div>\s*<div class="label">Hours played/i
       );
@@ -329,7 +387,7 @@ async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamG
         }
       }
 
-      // 2b. Recent games list (e.g. Counter-Strike 2 with 778 hrs, Silksong, etc.)
+      // Recent games list (Counter-Strike 2 - 778 hrs, Silksong, etc.)
       const recentRegex = /<div class="game_info">[\s\S]*?app\/(\d+)[\s\S]*?class="game_info_details">\s*([\d,.]+)\s*hrs on record[\s\S]*?class="game_name"><a class="whiteLink"[^>]*>([^<]+)<\/a>/gi;
       let match;
       while ((match = recentRegex.exec(html)) !== null) {
@@ -345,24 +403,30 @@ async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamG
           });
         }
       }
-
-      if (scrapedGames.length > 0) {
-        // Merge with fallbacks so the vault is rich with extra games if needed
-        const combined = [...scrapedGames];
-        for (const fb of FALLBACK_GAMES) {
-          if (!combined.some((g) => g.appid === fb.appid)) {
-            combined.push(fb);
-          }
-        }
-        setCache(cacheKey, combined, 3600);
-        return combined;
-      }
     }
   } catch (e) {
     console.error("Steam public community scrape failed:", e);
   }
 
-  return FALLBACK_GAMES;
+  // Merge with curated fallbacks to ensure rich library
+  const combinedGames = [...scrapedGames];
+  for (const fb of FALLBACK_GAMES) {
+    if (!combinedGames.some((g) => g.appid === fb.appid)) {
+      combinedGames.push(fb);
+    }
+  }
+
+  profile.lastUpdated = new Date().toISOString();
+  const result = { profile, games: combinedGames };
+
+  // 6-Hour Cache TTL (6 * 3600 seconds)
+  setCache(cacheKey, result, 21600);
+  return result;
+}
+
+async function fetchSteamGames(steamId: string, webKey?: string): Promise<SteamGame[]> {
+  const data = await fetchSteamData(steamId, webKey);
+  return data.games;
 }
 
 // --- News Fetcher ---
@@ -528,10 +592,11 @@ export default async (req: Request, context: Context) => {
   if (pathname === "/api/games" || pathname.startsWith("/api/games/")) {
     const steamId = process.env.STEAM_ID || "76561198200466026";
     const webKey = process.env.WEB_KEY || "";
-    const allGames = await fetchSteamGames(steamId, webKey);
+    const steamData = await fetchSteamData(steamId, webKey);
     return json({
-      allGames,
-      pinnedIds: [730], // Counter-Strike 2 pinned
+      profile: steamData.profile,
+      allGames: steamData.games,
+      pinnedIds: [346110, 730], // ARK and Counter-Strike 2 pinned
     });
   }
 
@@ -605,6 +670,32 @@ export default async (req: Request, context: Context) => {
     quoteCacheExpires = 0;
     const freshQuote = await fetchDailyQuote();
     return json({ success: true, quote: freshQuote });
+  }
+
+  // Route: /api/admin/fresh-data (0'dan her şeyi yenileyen ve cache'i temizleyen route)
+  if (pathname === "/api/admin/fresh-data") {
+    memoryCache.clear();
+    cachedQuote = null;
+    quoteCacheExpires = 0;
+
+    const [anime, steamData, quote] = await Promise.all([
+      fetchAniList("MehmetCanWT"),
+      fetchSteamData("76561198200466026", process.env.WEB_KEY),
+      fetchDailyQuote(),
+    ]);
+
+    return json({
+      success: true,
+      message: "Tüm sistem önbelleği sıfırlandı ve 100% taze canlı veriler çekildi.",
+      timestamp: new Date().toISOString(),
+      summary: {
+        animeCount: anime.length,
+        gamesCount: steamData.games.length,
+        steamUser: steamData.profile.personaname,
+        steamLevel: steamData.profile.level,
+        quoteCharacter: quote.character,
+      },
+    });
   }
 
   // Route: /api/og/readme - Dynamic GitHub Profile README Image with Anime & Steam game images

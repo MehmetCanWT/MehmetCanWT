@@ -15,7 +15,7 @@ export default function GuestbookSection({ entries, onNewEntry }: GuestbookSecti
       <div className="manga-title text-xl sm:text-2xl flex items-center gap-2">
         <MessageSquare size={20} /> SYSTEM LOGS // GUESTBOOK
       </div>
-      <div className="manga-panel space-y-6">
+      <div className="manga-panel space-y-6 bg-white dark:bg-zinc-900 border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] p-6">
         <GuestbookForm onSuccess={onNewEntry} />
         <div className="border-t-4 border-black dark:border-white/20 pt-4 space-y-4">
           {safeEntries.length > 0 ? (
