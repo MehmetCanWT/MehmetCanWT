@@ -1,13 +1,10 @@
 [build]
-  command = "curl -fsSL https://bun.sh/install | bash && export BUN_INSTALL=\"$HOME/.bun\" && export PATH=\"$BUN_INSTALL/bin:$PATH\" && bun install && bun run build"
-  publish = "apps/web/dist"
+  base = "apps/web"
+  command = "npm run build"
+  publish = "dist"
 
 [build.environment]
   SECRETS_SCAN_ENABLED = "false"
-
-[functions]
-  directory = "apps/web/netlify/functions"
-  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/*"
