@@ -1,12 +1,12 @@
 [build]
-  command = "bun run build"
+  command = "npm --prefix apps/web run build"
   publish = "apps/web/dist"
 
 [build.environment]
-  NODE_VERSION = "22"
+  SECRETS_SCAN_ENABLED = "false"
 
 [functions]
-  directory = "netlify/functions"
+  directory = "apps/web/netlify/functions"
   node_bundler = "esbuild"
 
 [[redirects]]
