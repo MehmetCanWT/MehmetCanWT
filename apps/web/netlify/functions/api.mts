@@ -666,8 +666,7 @@ export default async (req: Request, context: Context) => {
 
   // Route: /api/admin/quote/force-update
   if (pathname === "/api/admin/quote/force-update") {
-    cachedQuote = null;
-    quoteCacheExpires = 0;
+    memoryCache.delete("daily-quote");
     const freshQuote = await fetchDailyQuote();
     return json({ success: true, quote: freshQuote });
   }
@@ -675,8 +674,6 @@ export default async (req: Request, context: Context) => {
   // Route: /api/admin/fresh-data (0'dan her şeyi yenileyen ve cache'i temizleyen route)
   if (pathname === "/api/admin/fresh-data") {
     memoryCache.clear();
-    cachedQuote = null;
-    quoteCacheExpires = 0;
 
     const [anime, steamData, quote] = await Promise.all([
       fetchAniList("MehmetCanWT"),
