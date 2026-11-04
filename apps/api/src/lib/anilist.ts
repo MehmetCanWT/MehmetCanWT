@@ -55,7 +55,7 @@ query ($userName: String) {
         }
         status
         progress
-        score(format: POINT_100)
+        score(format: POINT_5)
       }
     }
   }
@@ -109,20 +109,29 @@ export async function getAllAnime(userName: string): Promise<AnimeEntry[]> {
       });
 
       const statusOrder: Record<string, number> = {
-        "CURRENT": 0,
-        "REPEATING": 0,
-        "COMPLETED": 1,
-        "PAUSED": 2,
-        "DROPPED": 3,
-        "PLANNING": 4
+        "COMPLETED": 0,
+        "CURRENT": 1,
+        "REPEATING": 1,
+        "DROPPED": 2,
+        "PLANNING": 3,
+        "PAUSED": 4
       };
 
       return allEntries.sort((a, b) => {
+        // 1. User Star Rating (Score) descending: 5 stars -> 4 stars -> unrated (0)
+        const scoreA = a.userScore || 0;
+        const scoreB = b.userScore || 0;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+
+        // 2. Status order: COMPLETED -> CURRENT -> DROPPED -> PLANNING
         const orderA = statusOrder[a.status] ?? 99;
         const orderB = statusOrder[b.status] ?? 99;
-        
         if (orderA !== orderB) return orderA - orderB;
-        return b.userScore - a.userScore;
+
+        // 3. Community Average Score
+        return (b.averageScore || 0) - (a.averageScore || 0);
       });
 
     } catch (error) {

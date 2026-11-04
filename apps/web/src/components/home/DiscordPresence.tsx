@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Radio, ExternalLink, MoreHorizontal, Sparkles } from 'lucide-react';
+import { Radio, ExternalLink, MoreHorizontal, Gamepad2, Code2, Music2 } from 'lucide-react';
 import type { DiscordData, DiscordActivity } from '../../types';
 
 interface DiscordPresenceProps {
@@ -7,10 +7,16 @@ interface DiscordPresenceProps {
 }
 
 function resolveAssetUrl(activity?: DiscordActivity): string | null {
-  if (!activity?.assets?.large_image) return null;
-  const raw = activity.assets.large_image;
+  if (!activity) return null;
+  const raw = activity.assets?.large_image || activity.assets?.small_image;
+  if (!raw) return null;
+
   if (raw.startsWith('mp:external/')) {
-    return raw.replace(/^mp:external\/[^\/]+\/https?\//, 'https://');
+    // Discord Media Proxy native URL
+    return `https://media.discordapp.net/external/${raw.replace('mp:external/', '')}`;
+  }
+  if (raw.startsWith('spotify:')) {
+    return `https://i.scdn.co/image/${raw.replace('spotify:', '')}`;
   }
   if (raw.startsWith('http://') || raw.startsWith('https://')) {
     return raw;
@@ -62,8 +68,8 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
   const customStatus = discord?.activities?.find((a) => a.type === 4);
   const statusEmoji = customStatus?.emoji?.name || '😘';
 
+  // Support any live activity: Music, Game, VS Code / Terminal, Stream, etc.
   const mainActivity =
-    discord?.activities?.find((a) => a.type === 2 || a.name === 'BitChord') ||
     (discord?.spotify
       ? {
           type: 2,
@@ -71,36 +77,56 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
           details: discord.spotify.song,
           state: discord.spotify.artist,
           assets: { large_image: discord.spotify.album_art_url },
+          timestamps: { start: discord.spotify.timestamps?.start, end: discord.spotify.timestamps?.end },
+          details_url: `https://open.spotify.com/track/${discord.spotify.track_id}`,
         }
       : null) ||
     discord?.activities?.find((a) => a.type !== 4);
 
-  const activityImage =
-    resolveAssetUrl(mainActivity as DiscordActivity | undefined) ||
-    'https://yt3.googleusercontent.com/Twb6bd5hcKvQLpTJ0FbxqxdRDSs4dpimhPkiZvF9uHZQ6pR02F6HefN0X4lLwgBdFhEbzB6UMaQn5fo=w544-h544-l90-rj';
+  const activityImage = resolveAssetUrl(mainActivity as DiscordActivity | undefined);
 
-  // Calculate audio track progress
+  // Activity type badges & labels
+  const isMusic = mainActivity?.type === 2 || mainActivity?.name === 'BitChord' || !!discord?.spotify;
+  const isGame = mainActivity?.type === 0;
+  const isStreaming = mainActivity?.type === 1;
+  const isWatching = mainActivity?.type === 3;
+
+  const activityHeader = isMusic
+    ? `${mainActivity?.name || 'Müzik'} dinliyor`
+    : isGame
+    ? `${mainActivity?.name || 'Oyun'} oynuyor`
+    : isStreaming
+    ? `${mainActivity?.name || 'Yayın'} yapıyor`
+    : isWatching
+    ? `${mainActivity?.name || 'Video'} izliyor`
+    : `${mainActivity?.name || 'Aktif'}`;
+
+  // Calculate audio / session progress
   const startTs = mainActivity?.timestamps?.start;
   const endTs = mainActivity?.timestamps?.end;
-  let progressPercent = 75;
-  let currentFormatted = '03:11';
-  let totalFormatted = '03:36';
+  let progressPercent = 50;
+  let currentFormatted = '00:00';
+  let totalFormatted = '00:00';
+  const hasTimeline = !!(startTs && endTs && endTs > startTs);
 
-  if (startTs && endTs && endTs > startTs) {
+  if (hasTimeline && startTs && endTs) {
     const elapsed = Math.max(0, now - startTs);
     const total = endTs - startTs;
     progressPercent = Math.min(100, Math.max(0, (elapsed / total) * 100));
     currentFormatted = formatDuration(elapsed);
     totalFormatted = formatDuration(total);
+  } else if (startTs) {
+    const elapsed = Math.max(0, now - startTs);
+    currentFormatted = formatDuration(elapsed);
   }
 
-  const musicUrl =
+  const actionUrl =
     mainActivity?.details_url ||
-    (mainActivity?.details
+    (isMusic && mainActivity?.details
       ? `https://music.youtube.com/search?q=${encodeURIComponent(
           `${mainActivity.details} ${mainActivity.state || ''}`
         )}`
-      : 'https://music.youtube.com');
+      : null);
 
   return (
     <section className="space-y-3">
@@ -119,16 +145,16 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
         </span>
       </div>
 
-      {/* Discord Profile Card (Pixel-perfect recreation of user screenshot) */}
+      {/* Discord Profile Card */}
       <div className="manga-panel relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#22070c] via-[#180509] to-[#0f0305] text-white border-3 border-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] dark:shadow-[5px_5px_0px_0px_rgba(255,255,255,0.2)]">
-        {/* Banner with Fiery Demon / Rose Theme */}
+        {/* Animated Discord Banner directly from Discord CDN */}
         <div className="relative h-28 w-full overflow-hidden bg-gradient-to-r from-red-950 via-rose-900 to-amber-950">
           <img
-            src="/discord-banner.png"
+            src="https://cdn.discordapp.com/banners/1245414098238177400/a_d10ee85d55ecca7c33e2d147d429a9f2.gif?size=600"
             alt="Discord Banner"
             className="w-full h-full object-cover object-top opacity-95"
             onError={(e) => {
-              (e.currentTarget as HTMLElement).style.display = 'none';
+              (e.currentTarget as HTMLImageElement).src = '/discord-banner.png';
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#22070c] via-transparent to-black/20" />
@@ -136,11 +162,12 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
 
         {/* Content body */}
         <div className="px-5 pb-5 pt-0 space-y-4 relative">
-          {/* Avatar row with avatar decoration & custom status emoji bubble */}
-          <div className="flex items-end justify-between -mt-12 mb-2">
-            <div className="relative inline-block">
-              {/* Avatar Image */}
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-[#22070c] shadow-lg bg-zinc-950 relative">
+          {/* Avatar row with centered wings decoration and status emoji bubble */}
+          <div className="flex items-end gap-3 -mt-12 mb-2">
+            {/* Perfectly centered 80x80 Avatar with precise 96x96 Discord decoration overlay */}
+            <div className="relative w-20 h-20 shrink-0">
+              {/* Circular Avatar */}
+              <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#22070c] shadow-lg bg-zinc-950 relative z-0">
                 <img
                   src={avatarUrl}
                   alt={user?.username || 'MehmetCan'}
@@ -148,26 +175,26 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
                 />
               </div>
 
-              {/* Wings Avatar Decoration Preset */}
+              {/* Wings Avatar Decoration Preset - Exactly centered (80px + 2*8px = 96px square) */}
               <img
                 src={avatarDecorationUrl}
                 alt="Avatar Decoration"
-                className="absolute -top-3.5 -left-3.5 w-[135%] h-[135%] pointer-events-none scale-105"
+                className="absolute -top-2 -left-2 w-24 h-24 max-w-none pointer-events-none z-10 select-none object-contain"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
                 }}
               />
 
-              {/* Discord Online Indicator */}
+              {/* Discord Status Dot */}
               <div
-                className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-[#22070c] ${statusColor} ${
+                className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-[#22070c] ${statusColor} z-20 ${
                   isOnline ? 'animate-pulse' : ''
                 }`}
               />
             </div>
 
-            {/* Custom Status Speech Bubble */}
-            <div className="bg-[#2d0e14] border border-rose-500/30 rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-1.5 mb-2 hover:scale-105 transition-transform">
+            {/* Custom Status Speech Bubble (Anchored next to avatar bottom right) */}
+            <div className="mb-1.5 bg-[#2d0e14] border border-rose-500/30 rounded-2xl px-2.5 py-1 shadow-md flex items-center justify-center hover:scale-105 transition-transform z-20">
               <span className="text-xl leading-none">{statusEmoji}</span>
             </div>
           </div>
@@ -181,111 +208,109 @@ export default function DiscordPresence({ discord }: DiscordPresenceProps) {
               <span>{user?.username ? `@${user.username}` : 'femboymemo'}</span>
               <span className="text-zinc-500">•</span>
               <span className="text-rose-300">Say/Gex</span>
-              <span className="inline-flex items-center gap-1 bg-cyan-950/80 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded border border-cyan-500/40">
+              <span className="inline-flex items-center gap-1 bg-cyan-950/80 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded border border-cyan-500/40 font-mono">
                 💎 OPEN
               </span>
             </div>
           </div>
 
-          {/* Badges Row */}
-          <div className="flex items-center gap-2 pt-1 pb-1 text-sm bg-black/30 px-3 py-1.5 rounded-lg border border-white/5 flex-wrap">
-            <span title="Blender / 3D">🎨</span>
-            <span title="Terminal / Systems">🖥️</span>
-            <span title="Combat / CS2">⚔️</span>
-            <span title="Gamer">🎮</span>
-            <span title="Python / Backend">🐍</span>
-            <span title="Diamond">💎</span>
-            <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">
-              +2
-            </span>
-          </div>
+          {/* Live Activity Player / Status Card (Music, Game, App, Streaming) */}
+          {mainActivity ? (
+            <div className="bg-[#260a10] border border-rose-900/40 rounded-xl p-3.5 space-y-3 shadow-inner">
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
+                <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-rose-300">
+                  {isMusic ? (
+                    <Music2 size={13} className="text-rose-400 animate-pulse" />
+                  ) : isGame ? (
+                    <Gamepad2 size={13} className="text-amber-400" />
+                  ) : isStreaming ? (
+                    <Radio size={13} className="text-purple-400 animate-pulse" />
+                  ) : (
+                    <Code2 size={13} className="text-cyan-400" />
+                  )}
+                  <span>{activityHeader}</span>
+                </span>
+                <MoreHorizontal size={14} className="text-zinc-500 cursor-pointer hover:text-white" />
+              </div>
 
-          {/* Game Collection Preview Row (Oyun Koleksiyonu) */}
-          <div className="bg-[#290c12]/70 border border-rose-950/60 rounded-xl p-2.5 flex items-center justify-between">
-            <span className="text-xs font-bold text-zinc-300">Oyun Koleksiyonu</span>
-            <div className="flex items-center gap-1.5">
-              <img
-                src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/capsule_sm_120.jpg"
-                alt="CS2"
-                title="Counter-Strike 2"
-                className="w-6 h-6 rounded object-cover border border-zinc-700 hover:scale-110 transition-transform"
-              />
-              <img
-                src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427520/capsule_sm_120.jpg"
-                alt="Factorio"
-                title="Factorio"
-                className="w-6 h-6 rounded object-cover border border-zinc-700 hover:scale-110 transition-transform"
-              />
-              <img
-                src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/capsule_sm_120.jpg"
-                alt="ARK"
-                title="ARK: Survival Evolved"
-                className="w-6 h-6 rounded object-cover border border-zinc-700 hover:scale-110 transition-transform"
-              />
-              <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800/80 px-1 py-0.5 rounded">
-                +4
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-lg overflow-hidden border border-rose-900/50 flex-shrink-0 bg-black shadow-md flex items-center justify-center relative">
+                  {activityImage ? (
+                    <img
+                      src={activityImage}
+                      alt={mainActivity?.details || mainActivity?.name || 'Activity'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                        const parent = (e.currentTarget.parentElement as HTMLElement);
+                        if (parent) {
+                          parent.innerHTML = isMusic 
+                            ? '<span class="text-rose-400 font-mono font-black text-[10px]">MUSIC</span>'
+                            : '<span class="text-amber-400 font-mono font-black text-[10px]">GAME</span>';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-rose-950/60">
+                      {isMusic ? <Music2 size={20} className="text-rose-400" /> : <Gamepad2 size={20} className="text-amber-400" />}
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-black text-sm text-white truncate leading-tight">
+                    {mainActivity?.details || mainActivity?.name || 'Active Session'}
+                  </h4>
+                  <p className="text-xs font-medium text-zinc-400 truncate mt-0.5">
+                    {mainActivity?.state || (isGame ? 'Playing Now' : 'Online')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Bar (if audio track or timeline exists) */}
+              {hasTimeline ? (
+                <div className="space-y-1 pt-1">
+                  <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                    <div
+                      className="h-full bg-gradient-to-r from-rose-500 to-amber-400 rounded-full transition-all duration-1000"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-mono font-bold text-zinc-400">
+                    <span>{currentFormatted}</span>
+                    <span>{totalFormatted}</span>
+                  </div>
+                </div>
+              ) : startTs ? (
+                <div className="text-[10px] font-mono text-zinc-400 flex items-center justify-between pt-0.5">
+                  <span>ELAPSED:</span>
+                  <span className="text-amber-300 font-black">{currentFormatted}</span>
+                </div>
+              ) : null}
+
+              {/* Action Button (e.g. YouTube Music / Spotify / Hub) */}
+              {actionUrl ? (
+                <a
+                  href={actionUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full block text-center py-2 px-3 bg-gradient-to-r from-rose-900/60 to-red-900/60 hover:from-rose-800 hover:to-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider border border-rose-700/40 shadow-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5"
+                >
+                  <span>{discord?.spotify ? 'Listen on Spotify' : 'Listen on YouTube Music'}</span>
+                  <ExternalLink size={12} />
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            /* Standby Card when no active game/music */
+            <div className="bg-[#1f090e] border border-rose-950/60 rounded-xl p-3.5 flex items-center justify-between text-xs font-mono text-zinc-400">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-white font-bold">STATUS: READY // NO ACTIVE SESSION</span>
               </span>
+              <span className="text-[10px] text-zinc-500">IDLE</span>
             </div>
-          </div>
-
-          {/* Activity Player Card (BitChord / YouTube Music / Spotify) */}
-          <div className="bg-[#260a10] border border-rose-900/40 rounded-xl p-3.5 space-y-3 shadow-inner">
-            <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
-              <span className="flex items-center gap-1.5">
-                <Sparkles size={12} className="text-rose-400 animate-spin" />
-                {mainActivity?.name ? `${mainActivity.name} dinliyor` : 'BitChord dinliyor'}
-              </span>
-              <MoreHorizontal size={14} className="text-zinc-500 cursor-pointer hover:text-white" />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-lg overflow-hidden border border-rose-900/50 flex-shrink-0 bg-black shadow-md">
-                <img
-                  src={activityImage}
-                  alt={mainActivity?.details || 'Ending Credits'}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      'https://yt3.googleusercontent.com/Twb6bd5hcKvQLpTJ0FbxqxdRDSs4dpimhPkiZvF9uHZQ6pR02F6HefN0X4lLwgBdFhEbzB6UMaQn5fo=w544-h544-l90-rj';
-                  }}
-                />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <h4 className="font-black text-sm text-white truncate leading-tight">
-                  {mainActivity?.details || 'Ending Credits'}
-                </h4>
-                <p className="text-xs font-medium text-zinc-400 truncate mt-0.5">
-                  {mainActivity?.state || 'Opeth'}
-                </p>
-              </div>
-            </div>
-
-            {/* Audio Timeline Scrub Bar */}
-            <div className="space-y-1 pt-1">
-              <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
-                <div
-                  className="h-full bg-gradient-to-r from-rose-500 to-amber-400 rounded-full transition-all duration-1000"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-center text-[10px] font-mono font-bold text-zinc-400">
-                <span>{currentFormatted}</span>
-                <span>{totalFormatted}</span>
-              </div>
-            </div>
-
-            {/* Listen on YouTube Music button */}
-            <a
-              href={musicUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full block text-center py-2 px-3 bg-gradient-to-r from-rose-900/60 to-red-900/60 hover:from-rose-800 hover:to-red-800 text-white rounded-lg text-xs font-black uppercase tracking-wider border border-rose-700/40 shadow-sm transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5"
-            >
-              <span>Listen on YouTube Music</span>
-              <ExternalLink size={12} />
-            </a>
-          </div>
+          )}
         </div>
       </div>
     </section>

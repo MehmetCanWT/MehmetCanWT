@@ -5,10 +5,11 @@ import { jwt } from '@elysia/jwt';
 import { swagger } from '@elysiajs/swagger';
 import { db, anime, games, guestbook } from 'db';
 import { eq, desc } from 'drizzle-orm';
-import { getAllAnime, getAnimeById } from './lib/anilist';
+import { getAllAnime } from './lib/anilist';
 import { getAllGames } from './lib/steam';
 import { getMixedNews } from './lib/news';
 import { getDailyQuote } from './lib/quotes';
+import { invalidateAllCache } from './lib/cache';
 import path from 'path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
@@ -30,13 +31,31 @@ const JWT_SECRET_KEY = process.env.JWT_SECRET || 'fallback_dev_secret_change_me'
 // Fetch font once on start (Safe fetch)
 let fontData: ArrayBuffer;
 try {
-  const res = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/inter/static/Inter-Black.ttf');
+  const res = await fetch('https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-900-normal.ttf');
   if (!res.ok) {
     throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
   }
   fontData = await res.arrayBuffer();
 } catch (e) {
   console.warn("Could not fetch font for OG image, using fallback logic:", e);
+}
+
+async function fetchImageAsBase64(url: string): Promise<string> {
+  if (!url) return '';
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://steamcommunity.com/'
+      }
+    });
+    if (!res.ok) return '';
+    const buf = await res.arrayBuffer();
+    const contentType = res.headers.get('content-type') || 'image/jpeg';
+    return `data:${contentType};base64,${Buffer.from(buf).toString('base64')}`;
+  } catch (e) {
+    return '';
+  }
 }
 
 // --- Rate limiter for guestbook and login ---
@@ -112,26 +131,20 @@ async function pinEntity(
     return { success: false, error: "Database is offline. Changes not saved." };
   }
   try {
-    if (body.isPinned) {
-      const values: any = {
-        title: body.title,
-        isPinned: true
-      };
-      if (table === anime) {
-        values.anilistId = body.id;
-      } else {
-        values.steamId = body.id;
-      }
-
-      await db.insert(table).values(values).onConflictDoUpdate({
-        target: idField,
-        set: { isPinned: true }
-      });
+    const values: any = {
+      title: body.title,
+      isPinned: body.isPinned
+    };
+    if (table === anime) {
+      values.anilistId = body.id;
     } else {
-      await db.update(table)
-        .set({ isPinned: false })
-        .where(eq(idField, body.id));
+      values.steamId = body.id;
     }
+
+    await db.insert(table).values(values).onConflictDoUpdate({
+      target: idField,
+      set: { isPinned: body.isPinned }
+    });
     return { success: true };
   } catch (e) {
     console.error(`Pin entity error:`, e);
@@ -210,7 +223,7 @@ const app = new Elysia()
     const pinned = await withDb([] as { anilistId: number }[], () =>
       db!.select().from(anime).where(eq(anime.isPinned, true))
     );
-    const pinnedIds = pinned.map(p => p.anilistId);
+    const pinnedIds = pinned.length > 0 ? pinned.map(p => p.anilistId) : [21];
     return { allAnime, pinnedIds };
   })
   .get('/api/games', async () => {
@@ -218,8 +231,48 @@ const app = new Elysia()
     const pinned = await withDb([] as { steamId: number }[], () =>
       db!.select().from(games).where(eq(games.isPinned, true))
     );
-    const pinnedIds = pinned.map(p => p.steamId);
-    return { allGames, pinnedIds };
+    const pinnedIds = pinned.length > 0 ? pinned.map(p => p.steamId) : [346110, 730];
+    const profile = {
+      steamid: STEAM_ID,
+      personaname: "FemboyMemo",
+      avatar: "https://shared.akamai.steamstatic.com/community_assets/images/items/1385730/b2bba5dcd8e2942ec5ba7639ea6622753e6005ad.gif",
+      avatarframe: "https://shared.fastly.steamstatic.com/community_assets/images/items/527230/18ec71cb7da1182d32164890bac8411a09e26e46.png",
+      level: 54,
+      totalHours: 8901,
+      backgroundVideoWebm: "https://shared.akamai.steamstatic.com/community_assets/images/items/2070850/7890df00a25ba9bbb8947df4205e04c88006852b.webm",
+      backgroundVideoMp4: "https://shared.akamai.steamstatic.com/community_assets/images/items/2070850/8225c97a6365c6fefdd41afc76012c1e117fa3a2.mp4",
+      backgroundPoster: "https://shared.akamai.steamstatic.com/community_assets/images/items/2070850/468af81383083392a90b6434813cbd741c3da7cf.jpg",
+      lastUpdated: new Date().toISOString(),
+    };
+    return { profile, allGames, pinnedIds };
+  })
+  .get('/api/lanyard', async () => {
+    const discordId = process.env.DISCORD_ID;
+    if (!discordId) return { error: 'DISCORD_ID not configured' };
+    try {
+      const res = await fetch(`https://api.lanyard.rest/v1/users/${discordId}`);
+      if (res.ok) {
+        const data = await res.json();
+        return { ...data, discord_id: discordId };
+      }
+    } catch (e) {
+      console.error('Lanyard fetch error:', e);
+    }
+    return { error: 'Failed to fetch Lanyard data' };
+  })
+  .get('/api/discord', async () => {
+    const discordId = process.env.DISCORD_ID;
+    if (!discordId) return { error: 'DISCORD_ID not configured' };
+    try {
+      const res = await fetch(`https://api.lanyard.rest/v1/users/${discordId}`);
+      if (res.ok) {
+        const data = await res.json();
+        return { ...data, discord_id: discordId };
+      }
+    } catch (e) {
+      console.error('Lanyard fetch error:', e);
+    }
+    return { error: 'Failed to fetch Lanyard data' };
   })
   .get('/api/news', async () => {
     return await getMixedNews();
@@ -312,7 +365,7 @@ const app = new Elysia()
       maxAge: 86400 // 24 hours
     });
 
-    return { success: true };
+    return { success: true, token };
   }, {
     body: t.Object({
       password: t.String()
@@ -325,8 +378,9 @@ const app = new Elysia()
 
   // --- Protected admin routes ---
   .guard({
-    beforeHandle: async ({ jwt, set, cookie: { auth } }) => {
-      const token = auth.value;
+    beforeHandle: async ({ jwt, set, cookie: { auth }, request }) => {
+      const authHeader = request ? request.headers.get('Authorization') : null;
+      const token = auth.value || (authHeader ? authHeader.replace(/^Bearer\s+/i, '') : null);
       if (!token) {
         set.status = 401;
         return { error: "Unauthorized" };
@@ -376,6 +430,27 @@ const app = new Elysia()
         return { success: false, error: "Update failed." };
       }
     })
+    .post('/api/admin/fresh-data', async () => {
+      try {
+        await invalidateAllCache();
+        const [animes, allGames, quote] = await Promise.all([
+          getAllAnime('MehmetCanWT'),
+          getAllGames(STEAM_ID),
+          getDailyQuote(true),
+        ]);
+        return {
+          success: true,
+          message: "Cache cleared and live data refreshed.",
+          summary: {
+            animeCount: animes.length,
+            gamesCount: allGames.length,
+            quoteCharacter: quote.character,
+          },
+        };
+      } catch (e) {
+        return { success: false, error: "Fresh data refresh failed." };
+      }
+    })
   )
   .get('/api/og/readme', async ({ set }) => {
     try {
@@ -384,11 +459,30 @@ const app = new Elysia()
         getAllGames(STEAM_ID)
       ]);
 
-      const favoriteAnime = await getAnimeById(21) || animes[0];
-      const topGame = [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0];
-      const gameImageUrl = topGame ? 'https://cdn.akamai.steamstatic.com/steam/apps/' + topGame.appid + '/header.jpg' : '';
+      const pinned = await withDb([] as { anilistId: number }[], () =>
+        db!.select().from(anime).where(eq(anime.isPinned, true))
+      );
+      const pinnedAnimeId = pinned[0]?.anilistId || 21;
+      const favoriteAnime = animes.find(a => a.id === pinnedAnimeId) || animes[0];
+
+      const pinnedG = await withDb([] as { steamId: number }[], () =>
+        db!.select().from(games).where(eq(games.isPinned, true))
+      );
+      const pinnedGameId = pinnedG[0]?.steamId || 346110;
+      const topGame = allGames.find(g => g.appid === pinnedGameId) || [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0];
+
+      const rawGameUrl = topGame ? `https://cdn.akamai.steamstatic.com/steam/apps/${topGame.appid}/header.jpg` : '';
+      const rawAnimeUrl = favoriteAnime?.coverImage?.large || '';
+
+      // Convert images to base64 so Satori / GitHub embeds them natively with 0 broken images
+      const [animeBase64, gameBase64] = await Promise.all([
+        fetchImageAsBase64(rawAnimeUrl),
+        fetchImageAsBase64(rawGameUrl)
+      ]);
 
       if (!fontData) return new Response("Font not loaded");
+
+      const hours = Math.round((topGame?.playtime_forever || 0) / 60);
 
       const svg = await satori(
         React.createElement('div', {
@@ -398,42 +492,258 @@ const app = new Elysia()
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#fff',
-            backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)',
+            justifyContent: 'space-between',
+            backgroundColor: '#0c0a0f',
+            backgroundImage: 'radial-gradient(circle, #26172a 1.5px, transparent 1.5px)',
             backgroundSize: '20px 20px',
-            padding: '30px',
+            padding: '24px 30px',
             fontFamily: 'Inter',
+            border: '4px solid #3b1828',
+            borderRadius: '16px',
+            boxSizing: 'border-box',
           }
         }, [
-          React.createElement('div', { key: 'header', style: { display: 'flex', width: '100%', marginBottom: '15px' } }, [
-            React.createElement('div', { key: 'header-inner', style: { display: 'flex', backgroundColor: '#000', color: '#fff', padding: '8px 16px', fontSize: '28px', fontWeight: 900, fontStyle: 'italic', textTransform: 'uppercase' } }, 'MEHMETCANWT // LIVE ARCHIVE')
+          // Top Bar
+          React.createElement('div', {
+            key: 'header',
+            style: {
+              display: 'flex',
+              width: '100%',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '2px solid rgba(255,255,255,0.1)',
+              paddingBottom: '12px',
+              marginBottom: '14px',
+            }
+          }, [
+            React.createElement('div', {
+              key: 'header-title',
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#1a0c14',
+                color: '#ffffff',
+                border: '2px solid #e11d48',
+                padding: '6px 14px',
+                fontSize: '20px',
+                fontWeight: 900,
+                fontStyle: 'italic',
+                textTransform: 'uppercase',
+                letterSpacing: '-0.5px',
+              }
+            }, 'MEHMETCANWT // LIVE ARCHIVE'),
+            React.createElement('div', {
+              key: 'header-status',
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#052e16',
+                color: '#4ade80',
+                border: '1.5px solid #16a34a',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 900,
+                letterSpacing: '1px',
+                borderRadius: '4px',
+              }
+            }, '● ONLINE')
           ]),
-          React.createElement('div', { key: 'anime', style: { display: 'flex', width: '100%', backgroundColor: '#fff', border: '4px solid #000', boxShadow: '6px 6px 0px #000', padding: '15px', marginBottom: '20px', alignItems: 'center' } }, [
-            React.createElement('div', { key: 'anime-img-box', style: { display: 'flex', width: '80px', height: '110px', border: '2px solid #000', marginRight: '20px', overflow: 'hidden' } }, [
-              React.createElement('img', { src: favoriteAnime?.coverImage.large, style: { width: '100%', height: '100%', objectFit: 'cover' } })
+
+          // Main 2-column cards layout
+          React.createElement('div', {
+            key: 'cards-row',
+            style: {
+              display: 'flex',
+              width: '100%',
+              gap: '16px',
+              flex: 1,
+            }
+          }, [
+            // Left Card: Favorite Anime
+            React.createElement('div', {
+              key: 'anime-card',
+              style: {
+                display: 'flex',
+                flex: 1,
+                backgroundColor: '#160c13',
+                border: '2px solid #e11d48',
+                boxShadow: '4px 4px 0px #e11d48',
+                borderRadius: '10px',
+                padding: '14px',
+                alignItems: 'center',
+                gap: '14px',
+              }
+            }, [
+              animeBase64 ? React.createElement('img', {
+                key: 'anime-img',
+                src: animeBase64,
+                style: {
+                  width: '90px',
+                  height: '120px',
+                  borderRadius: '6px',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  objectFit: 'cover',
+                }
+              }) : null,
+              React.createElement('div', {
+                key: 'anime-info',
+                style: { display: 'flex', flexDirection: 'column', flex: 1 }
+              }, [
+                React.createElement('div', {
+                  key: 'anime-badge',
+                  style: {
+                    display: 'flex',
+                    backgroundColor: '#e11d48',
+                    color: '#ffffff',
+                    padding: '2px 8px',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    letterSpacing: '1px',
+                    alignSelf: 'flex-start',
+                    marginBottom: '6px',
+                    borderRadius: '2px',
+                  }
+                }, 'TOP PICK // FAVORITE ANIME'),
+                React.createElement('div', {
+                  key: 'anime-title',
+                  style: {
+                    display: 'flex',
+                    fontSize: '22px',
+                    fontWeight: 900,
+                    color: '#ffffff',
+                    textTransform: 'uppercase',
+                    fontStyle: 'italic',
+                    lineHeight: 1.1,
+                    marginBottom: '6px',
+                  }
+                }, favoriteAnime?.title?.english || favoriteAnime?.title?.romaji || 'ONE PIECE'),
+                React.createElement('div', {
+                  key: 'anime-score',
+                  style: {
+                    display: 'flex',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    color: '#fb7185',
+                    marginBottom: '4px',
+                  }
+                }, '★ 5/5 STARS // STATUS: CURRENT'),
+                React.createElement('div', {
+                  key: 'anime-progress',
+                  style: {
+                    display: 'flex',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    color: '#facc15',
+                  }
+                }, `${favoriteAnime?.progress || 1180}+ EPISODES LOGGED`)
+              ])
             ]),
-            React.createElement('div', { key: 'anime-info', style: { display: 'flex', flexDirection: 'column', flex: 1 } }, [
-              React.createElement('div', { key: 'anime-label', style: { display: 'flex', backgroundColor: '#000', color: '#fff', padding: '2px 8px', fontSize: '12px', fontWeight: 'bold', alignSelf: 'flex-start', marginBottom: '5px' } }, 'FAVORITE ANIME'),
-              React.createElement('div', { key: 'anime-title', style: { display: 'flex', fontSize: '24px', fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', lineHeight: 1.1 } }, favoriteAnime?.title.english || favoriteAnime?.title.romaji || 'ONE PIECE'),
-              React.createElement('div', { key: 'anime-status', style: { display: 'flex', fontSize: '12px', fontWeight: 'bold', marginTop: '5px', color: '#666' } }, `STATUS: ${favoriteAnime?.status || 'COMPLETED'} // ${favoriteAnime?.averageScore}% SCORE`)
+
+            // Right Card: Top Mission
+            React.createElement('div', {
+              key: 'game-card',
+              style: {
+                display: 'flex',
+                flex: 1,
+                backgroundColor: '#171109',
+                border: '2px solid #f59e0b',
+                boxShadow: '4px 4px 0px #f59e0b',
+                borderRadius: '10px',
+                padding: '14px',
+                alignItems: 'center',
+                gap: '14px',
+              }
+            }, [
+              gameBase64 ? React.createElement('img', {
+                key: 'game-img',
+                src: gameBase64,
+                style: {
+                  width: '120px',
+                  height: '75px',
+                  borderRadius: '6px',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  objectFit: 'cover',
+                }
+              }) : null,
+              React.createElement('div', {
+                key: 'game-info',
+                style: { display: 'flex', flexDirection: 'column', flex: 1 }
+              }, [
+                React.createElement('div', {
+                  key: 'game-badge',
+                  style: {
+                    display: 'flex',
+                    backgroundColor: '#f59e0b',
+                    color: '#000000',
+                    padding: '2px 8px',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    letterSpacing: '1px',
+                    alignSelf: 'flex-start',
+                    marginBottom: '6px',
+                    borderRadius: '2px',
+                  }
+                }, 'TOP MISSION // MASTERED'),
+                React.createElement('div', {
+                  key: 'game-title',
+                  style: {
+                    display: 'flex',
+                    fontSize: '20px',
+                    fontWeight: 900,
+                    color: '#ffffff',
+                    textTransform: 'uppercase',
+                    fontStyle: 'italic',
+                    lineHeight: 1.1,
+                    marginBottom: '6px',
+                  }
+                }, topGame?.name || 'ARK: SURVIVAL EVOLVED'),
+                React.createElement('div', {
+                  key: 'game-time',
+                  style: {
+                    display: 'flex',
+                    fontSize: '14px',
+                    fontWeight: 900,
+                    color: '#fde047',
+                    marginBottom: '4px',
+                  }
+                }, `${hours.toLocaleString()} HOURS RECORDED`),
+                React.createElement('div', {
+                  key: 'game-status',
+                  style: {
+                    display: 'flex',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    color: '#34d399',
+                  }
+                }, 'VERIFIED MISSION RECORD')
+              ])
             ])
           ]),
-          React.createElement('div', { key: 'game', style: { display: 'flex', width: '100%', backgroundColor: '#fff', border: '4px solid #000', boxShadow: '6px 6px 0px #000', padding: '15px', alignItems: 'center' } }, [
-            React.createElement('div', { key: 'game-img-box', style: { display: 'flex', width: '140px', height: '80px', border: '2px solid #000', marginRight: '20px', overflow: 'hidden' } }, [
-              React.createElement('img', { src: gameImageUrl, style: { width: '100%', height: '100%', objectFit: 'cover' } })
-            ]),
-            React.createElement('div', { key: 'game-info', style: { display: 'flex', flexDirection: 'column', flex: 1 } }, [
-              React.createElement('div', { key: 'game-label', style: { display: 'flex', backgroundColor: '#000', color: '#fff', padding: '2px 8px', fontSize: '12px', fontWeight: 'bold', alignSelf: 'flex-start', marginBottom: '5px' } }, 'MOST PLAYED MISSION'),
-              React.createElement('div', { key: 'game-title', style: { display: 'flex', fontSize: '24px', fontWeight: 900, textTransform: 'uppercase', fontStyle: 'italic', lineHeight: 1.1 } }, topGame?.name || 'COUNTER-STRIKE 2'),
-              React.createElement('div', { key: 'game-time', style: { display: 'flex', fontSize: '12px', fontWeight: 'bold', marginTop: '5px', color: '#666' } }, `TOTAL OPERATION TIME: ${(topGame?.playtime_forever / 60 || 0).toFixed(0)} HOURS`)
-            ])
-          ]),
-          React.createElement('div', { key: 'footer', style: { display: 'flex', marginTop: '15px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.5 } }, 'SYNCED WITH VDS NODE 01 // MEHMETCANWT.XYZ')
+
+          // Bottom Bar
+          React.createElement('div', {
+            key: 'footer',
+            style: {
+              display: 'flex',
+              width: '100%',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderTop: '2px solid rgba(255,255,255,0.1)',
+              paddingTop: '10px',
+              marginTop: '14px',
+              fontSize: '11px',
+              fontWeight: 800,
+              color: '#94a3b8',
+              letterSpacing: '0.5px',
+            }
+          }, [
+            React.createElement('span', { key: 'foot-left', style: { display: 'flex', color: '#38bdf8' } }, 'SYNCED WITH MEHMETCANWT.XYZ'),
+            React.createElement('span', { key: 'foot-right', style: { display: 'flex', color: '#a855f7' } }, 'LEVEL 22 HUMAN // ARCHIVE NODE 01')
+          ])
         ]),
         {
-          width: 800,
-          height: 500,
+          width: 860,
+          height: 320,
           fonts: [
             {
               name: 'Inter',
@@ -450,6 +760,7 @@ const app = new Elysia()
       const pngBuffer = pngData.asPng();
 
       set.headers['content-type'] = 'image/png';
+      set.headers['cache-control'] = 'public, max-age=1800, s-maxage=1800';
       return pngBuffer;
     } catch (e) {
       console.error("OG Generation Error:", e);

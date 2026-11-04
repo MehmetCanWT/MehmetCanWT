@@ -9,7 +9,7 @@ let dbInstance: NodePgDatabase<typeof schema> | null = null;
 
 if (connectionString) {
   try {
-    const useSSL = isProd && 
+    const useSSL = (isProd || connectionString.includes('neon.tech') || connectionString.includes('sslmode=require')) && 
       process.env.DB_SSL !== 'false' && 
       !connectionString.includes('@db:') && 
       !connectionString.includes('@db/') && 

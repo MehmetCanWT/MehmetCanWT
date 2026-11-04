@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { BookOpen, Gamepad2, Terminal } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api } from '../lib/eden';
 import SEO from '../components/SEO';
 import DailyQuote from '../components/home/DailyQuote';
 import FavoriteAnime from '../components/home/FavoriteAnime';
@@ -15,112 +14,117 @@ import type { AnimeEntry, SteamGame, NewsItem, GuestbookEntry, QuoteData } from 
 const FAVORITE_ANIME_ID = 21;
 
 interface HomeData {
-  favoriteAnime: AnimeEntry;
-  topGame: SteamGame;
+  favoriteAnime?: AnimeEntry | null;
+  topGame?: SteamGame | null;
   news: NewsItem[];
   guestbook: GuestbookEntry[];
-  dailyQuote: QuoteData;
+  dailyQuote?: QuoteData | null;
 }
 
-// Instant fallback state so the page renders in 0ms with zero delay
-const INITIAL_DATA: HomeData = {
-  favoriteAnime: {
-    id: 21,
-    title: { english: "ONE PIECE", romaji: "ONE PIECE" },
-    coverImage: { large: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg" },
-    status: "CURRENT",
-    averageScore: 88,
-    userScore: 100,
-    progress: 1100,
-    description: "Monkey D. Luffy sets out to become the King of the Pirates.",
-  },
-  topGame: {
-    appid: 346110,
-    name: "ARK: Survival Evolved",
-    playtime_forever: 110640,
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/capsule_184x69.jpg",
-  },
-  news: [
-    { title: "SYSTEM OPERATIONAL // MEHMETCANWT ARCHIVE ONLINE", source: "System" },
-    { title: "DISCORD & STEAM SYNCED WITH REAL PROFILE DATA", source: "Telemetry" },
-  ],
-  guestbook: [
-    {
-      id: 1,
-      username: "SYSTEM",
-      message: "ARCHIVE NODE OPERATIONAL // ALL SYSTEMS NORMAL",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      username: "MehmetCanWT",
-      message: "Welcome to my digital terminal & live archive.",
-      createdAt: new Date().toISOString(),
-    },
-  ],
-  dailyQuote: {
-    quote: "Believe in the me that believes in you!",
-    character: "Kamina",
-    anime: "Gurren Lagann",
-    characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/b2075-sWb5Xz76JWdX.png",
-    animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx2001-XwRnjzGeFWRQ.png",
-  },
-};
-
 export default function Home() {
-  const [data, setData] = useState<HomeData>(INITIAL_DATA);
+  const [data, setData] = useState<HomeData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cache:client:home');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return {
+      favoriteAnime: null,
+      topGame: null,
+      news: [],
+      guestbook: [],
+      dailyQuote: null,
+    };
+  });
   const discord = useDiscordPresence();
+
+  // Helper to update state and synchronize with local storage
+  const updateData = useCallback((updater: (prev: HomeData) => HomeData) => {
+    setData((prev) => {
+      const next = updater(prev);
+      try {
+        localStorage.setItem('cache:client:home', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   const fetchGuestbook = useCallback(async () => {
     try {
-      const guestbookRes = await api.api.guestbook.get();
-      const entries = Array.isArray(guestbookRes?.data) ? (guestbookRes.data as unknown as GuestbookEntry[]) : [];
-      if (entries.length > 0) {
-        setData((prev) => ({ ...prev, guestbook: entries }));
+      const res = await fetch('/api/guestbook');
+      if (res.ok) {
+        const entries = (await res.json()) as GuestbookEntry[];
+        if (Array.isArray(entries) && entries.length > 0) {
+          updateData((prev) => ({ ...prev, guestbook: entries }));
+        }
       }
     } catch (e) {
       console.error('Failed to refresh guestbook:', e);
     }
-  }, []);
+  }, [updateData]);
 
   useEffect(() => {
     async function fetchData() {
-      try {
-        const [animeRes, gameRes, newsRes, guestbookRes, quoteRes] = await Promise.all([
-          api.api.anime.get().catch(() => ({ data: null })),
-          api.api.games.get().catch(() => ({ data: null })),
-          api.api.news.get().catch(() => ({ data: [] })),
-          api.api.guestbook.get().catch(() => ({ data: [] })),
-          api.api.quote.get().catch(() => ({ data: null })),
-        ]);
+      // 1. Fetch Anime (Prioritizing admin pinned anime)
+      fetch('/api/anime')
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => {
+          const list = Array.isArray(d?.allAnime) && d.allAnime.length > 0 ? d.allAnime : null;
+          if (list) {
+            const pinnedList: number[] = Array.isArray(d?.pinnedIds) ? d.pinnedIds : [];
+            const fav = list.find((a: AnimeEntry) => pinnedList.includes(a.id)) || list.find((a: AnimeEntry) => a.id === FAVORITE_ANIME_ID) || list[0];
+            updateData((prev) => ({ ...prev, favoriteAnime: fav }));
+          }
+        })
+        .catch(() => {});
 
-        const rawAnime = (animeRes?.data as { allAnime?: AnimeEntry[] } | null)?.allAnime;
-        const allAnime = Array.isArray(rawAnime) && rawAnime.length > 0 ? rawAnime : null;
+      // 2. Fetch Games (Prioritizing admin pinned game)
+      fetch('/api/games')
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => {
+          const games = Array.isArray(d?.allGames) && d.allGames.length > 0 ? d.allGames : null;
+          if (games) {
+            const pinnedList: number[] = Array.isArray(d?.pinnedIds) ? d.pinnedIds : [];
+            const top = games.find((g: SteamGame) => pinnedList.includes(g.appid)) || [...games].sort((a: SteamGame, b: SteamGame) => b.playtime_forever - a.playtime_forever)[0];
+            updateData((prev) => ({ ...prev, topGame: top }));
+          }
+        })
+        .catch(() => {});
 
-        const rawGames = (gameRes?.data as { allGames?: SteamGame[] } | null)?.allGames;
-        const allGames = Array.isArray(rawGames) && rawGames.length > 0 ? rawGames : null;
+      // 3. Fetch News
+      fetch('/api/news')
+        .then((r) => r.ok ? r.json() : null)
+        .then((news) => {
+          if (Array.isArray(news) && news.length > 0) {
+            updateData((prev) => ({ ...prev, news }));
+          }
+        })
+        .catch(() => {});
 
-        const newsList = Array.isArray(newsRes?.data) && newsRes.data.length > 0 ? (newsRes.data as NewsItem[]) : null;
-        const guestbookList = Array.isArray(guestbookRes?.data) && guestbookRes.data.length > 0 ? (guestbookRes.data as unknown as GuestbookEntry[]) : null;
+      // 4. Fetch Guestbook
+      fetch('/api/guestbook')
+        .then((r) => r.ok ? r.json() : null)
+        .then((guestbook) => {
+          if (Array.isArray(guestbook) && guestbook.length > 0) {
+            updateData((prev) => ({ ...prev, guestbook }));
+          }
+        })
+        .catch(() => {});
 
-        const quoteData = (quoteRes?.data && typeof quoteRes.data === 'object' && 'quote' in quoteRes.data && (quoteRes.data as QuoteData).quote)
-          ? (quoteRes.data as QuoteData)
-          : null;
-
-        setData((prev) => ({
-          favoriteAnime: (allAnime ? (allAnime.find((a) => a.id === FAVORITE_ANIME_ID) || allAnime[0]) : null) || prev.favoriteAnime,
-          topGame: (allGames ? [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0] : null) || prev.topGame,
-          news: newsList || prev.news,
-          guestbook: guestbookList || prev.guestbook,
-          dailyQuote: quoteData || prev.dailyQuote,
-        }));
-      } catch (e) {
-        console.error('Background update failed:', e);
-      }
+      // 5. Fetch Quote
+      fetch('/api/quote')
+        .then((r) => r.ok ? r.json() : null)
+        .then((quote) => {
+          if (quote && typeof quote === 'object' && quote.quote) {
+            updateData((prev) => ({ ...prev, dailyQuote: quote }));
+          }
+        })
+        .catch(() => {});
     }
 
     fetchData();
-  }, []);
+  }, [updateData]);
 
   const age = useMemo(() => {
     const birthDate = new Date("2004-10-03");
@@ -134,7 +138,7 @@ export default function Home() {
   const canonicalUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-8 pb-20">
       <SEO 
         title="MehmetCanWT // Live Archive" 
         description="Personal Terminal & Archive of MehmetCanWT. Tracking Anime, Games, and Code with live Discord telemetry." 

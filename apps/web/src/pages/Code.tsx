@@ -39,8 +39,23 @@ interface ProjectDisplay {
   githubUrl: string;
   demoUrl?: string;
   tech: string[];
-  icon: any;
+  iconKey?: string;
   accentClass: string;
+}
+
+const ICON_MAP: Record<string, any> = {
+  cpu: Cpu,
+  terminal: Terminal,
+  shield: Shield,
+  music: Music,
+  code: Code2,
+};
+
+function resolveIcon(iconKey?: string) {
+  if (iconKey && ICON_MAP[iconKey]) {
+    return ICON_MAP[iconKey];
+  }
+  return Code2;
 }
 
 // Curated metadata enhancements for known repositories
@@ -49,97 +64,62 @@ const KNOWN_ENHANCEMENTS: Record<string, Partial<ProjectDisplay>> = {
     subtitle: "NITROSENSE FOR LINUX // SYSTEM UTILITY",
     description: "An advanced Linux utility bringing Acer NitroSense fan control, power plans, and hardware thermal management to Linux gaming environments.",
     tech: ["Python", "Linux Kernel", "GTK", "Hardware Telemetry"],
-    icon: Cpu,
+    iconKey: "cpu",
     accentClass: "bg-red-500 text-white dark:bg-red-400 dark:text-black",
   },
   rustfetch: {
     subtitle: "BLAZING-FAST SYSTEM INFO FETCH // PURE RUST",
     description: "Ultra-fast (~4ms execution time) and memory-safe Linux system information fetch tool written in pure Rust with zero bloat and crisp ASCII aesthetics.",
     tech: ["Rust", "Systems Programming", "CLI", "Linux API"],
-    icon: Terminal,
+    iconKey: "terminal",
     accentClass: "bg-orange-500 text-white dark:bg-orange-400 dark:text-black",
   },
   "WT-Dots": {
     subtitle: "PERSONAL DOTFILES & LINUX WORKSPACE",
     description: "Curated dotfiles, Hyprland/Wayland window management configurations, custom shell prompts, and high-performance developer workflows.",
     tech: ["Rust", "Shell Scripting", "Hyprland", "Linux"],
-    icon: Shield,
+    iconKey: "shield",
     accentClass: "bg-purple-500 text-white dark:bg-purple-400 dark:text-black",
   },
   JunimoJams: {
     subtitle: "UNIVERSAL IN-GAME HUD // STARDEW VALLEY MOD",
     description: "A premium Stardew Valley mod injecting an interactive glassmorphic HUD overlay to control and display active music playback with high-res cover art matching.",
     tech: ["C#", "SMAPI", "Harmony", "Game Modding"],
-    icon: Music,
+    iconKey: "music",
     accentClass: "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-black",
   },
   MehmetCanWT: {
     subtitle: "FULLSTACK MONOREPO ARCHIVE // NETLIFY + REACT 19",
     description: "The fullstack digital engine behind this live personal archive. Features serverless Netlify functions, AniList GraphQL integration, live Discord telemetry, and dynamic GitHub README SVG generation.",
     tech: ["React 19", "TypeScript", "Tailwind v4", "Netlify Functions", "Bun"],
-    icon: Code2,
+    iconKey: "code",
     accentClass: "bg-black text-white dark:bg-white dark:text-black",
   },
 };
 
-// Initial verified repositories sorted by stars
-const INITIAL_PROJECTS: ProjectDisplay[] = [
-  {
-    title: "OpeNitro",
-    subtitle: "NITROSENSE FOR LINUX // SYSTEM UTILITY",
-    description: "An advanced Linux utility bringing Acer NitroSense fan control, power plans, and hardware thermal management to Linux gaming environments.",
-    stars: 11,
-    githubUrl: "https://github.com/MehmetCanWT/OpeNitro",
-    tech: ["Python", "Linux Kernel", "GTK", "Hardware Telemetry"],
-    icon: Cpu,
-    accentClass: "bg-red-500 text-white dark:bg-red-400 dark:text-black",
-  },
-  {
-    title: "rustfetch",
-    subtitle: "BLAZING-FAST SYSTEM INFO FETCH // PURE RUST",
-    description: "Ultra-fast (~4ms execution time) and memory-safe Linux system information fetch tool written in pure Rust with zero bloat and crisp ASCII aesthetics.",
-    stars: 4,
-    githubUrl: "https://github.com/MehmetCanWT/rustfetch",
-    tech: ["Rust", "Systems Programming", "CLI", "Linux API"],
-    icon: Terminal,
-    accentClass: "bg-orange-500 text-white dark:bg-orange-400 dark:text-black",
-  },
-  {
-    title: "WT-Dots",
-    subtitle: "PERSONAL DOTFILES & LINUX WORKSPACE",
-    description: "Curated dotfiles, Hyprland/Wayland window management configurations, custom shell prompts, and high-performance developer workflows.",
-    stars: 2,
-    githubUrl: "https://github.com/MehmetCanWT/WT-Dots",
-    tech: ["Rust", "Shell Scripting", "Hyprland", "Linux"],
-    icon: Shield,
-    accentClass: "bg-purple-500 text-white dark:bg-purple-400 dark:text-black",
-  },
-  {
-    title: "JunimoJams",
-    subtitle: "UNIVERSAL IN-GAME HUD // STARDEW VALLEY MOD",
-    description: "A premium Stardew Valley mod injecting an interactive glassmorphic HUD overlay to control and display active music playback with high-res cover art matching.",
-    stars: 0,
-    githubUrl: "https://github.com/MehmetCanWT/JunimoJams",
-    tech: ["C#", "SMAPI", "Harmony", "Game Modding"],
-    icon: Music,
-    accentClass: "bg-emerald-500 text-white dark:bg-emerald-400 dark:text-black",
-  },
-  {
-    title: "MehmetCanWT",
-    subtitle: "FULLSTACK MONOREPO ARCHIVE // NETLIFY + REACT 19",
-    description: "The fullstack digital engine behind this live personal archive. Features serverless Netlify functions, AniList GraphQL integration, live Discord telemetry, and dynamic GitHub README SVG generation.",
-    stars: 0,
-    githubUrl: "https://github.com/MehmetCanWT/MehmetCanWT",
-    tech: ["React 19", "TypeScript", "Tailwind v4", "Netlify Functions", "Bun"],
-    icon: Code2,
-    accentClass: "bg-black text-white dark:bg-white dark:text-black",
-  },
-];
-
 export default function Code() {
-  const [projects, setProjects] = useState<ProjectDisplay[]>(INITIAL_PROJECTS);
-  const [loading, setLoading] = useState(false);
-  const [totalStars, setTotalStars] = useState<number>(17);
+  const [projects, setProjects] = useState<ProjectDisplay[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cache:client:code');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(projects.length === 0);
+  const [totalStars, setTotalStars] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cache:client:code');
+        if (cached) {
+          const list = JSON.parse(cached) as ProjectDisplay[];
+          return list.reduce((acc, curr) => acc + curr.stars, 0);
+        }
+      } catch {}
+    }
+    return 17;
+  });
 
   useEffect(() => {
     async function fetchGithubRepos() {
@@ -166,7 +146,7 @@ export default function Code() {
               githubUrl: repo.html_url,
               demoUrl: repo.homepage || undefined,
               tech: techList,
-              icon: known.icon || Code2,
+              iconKey: known.iconKey || "code",
               accentClass: known.accentClass || "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-black",
             };
           });
@@ -174,6 +154,9 @@ export default function Code() {
         // SORT STRICTLY BY STARS DESCENDING (Yıldıza göre sıralama)
         const sorted = mapped.sort((a, b) => b.stars - a.stars);
         setProjects(sorted);
+        try {
+          localStorage.setItem('cache:client:code', JSON.stringify(sorted));
+        } catch {}
 
         const starsCount = sorted.reduce((acc, curr) => acc + curr.stars, 0);
         setTotalStars(starsCount);
@@ -212,9 +195,26 @@ export default function Code() {
       </header>
 
       {/* Grid Layout for Project Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {projects.map((project, index) => {
-          const IconComponent = project.icon;
+      {loading && projects.length === 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="manga-panel p-6 border-3 border-black bg-white dark:bg-zinc-900 animate-pulse space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded border-2 border-dashed border-zinc-400 dark:border-zinc-700" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3" />
+                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                </div>
+              </div>
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-full" />
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {projects.map((project, index) => {
+            const IconComponent = resolveIcon(project.iconKey);
 
           return (
             <div 
@@ -287,6 +287,7 @@ export default function Code() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

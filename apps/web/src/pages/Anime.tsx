@@ -9,57 +9,22 @@ interface AnimePageData {
   pinnedIds: number[];
 }
 
-const INITIAL_ANIME: AnimeEntry[] = [
-  {
-    id: 21,
-    title: { english: "ONE PIECE", romaji: "ONE PIECE" },
-    coverImage: { large: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg" },
-    status: "CURRENT",
-    averageScore: 88,
-    userScore: 100,
-    progress: 1100,
-    format: "TV",
-    description: "Monkey D. Luffy sets out to become the King of the Pirates.",
-  },
-  {
-    id: 16498,
-    title: { english: "Attack on Titan", romaji: "Shingeki no Kyojin" },
-    coverImage: { large: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-73IhOXpJZiFU.jpg" },
-    status: "COMPLETED",
-    averageScore: 85,
-    userScore: 95,
-    progress: 25,
-    format: "TV",
-  },
-  {
-    id: 11061,
-    title: { english: "Hunter x Hunter (2011)", romaji: "Hunter x Hunter (2011)" },
-    coverImage: { large: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11061-sIpBcrwpEwW7.png" },
-    status: "COMPLETED",
-    averageScore: 90,
-    userScore: 98,
-    progress: 148,
-    format: "TV",
-  },
-  {
-    id: 1535,
-    title: { english: "Death Note", romaji: "Death Note" },
-    coverImage: { large: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1535-lawMgqnLHROy.jpg" },
-    status: "COMPLETED",
-    averageScore: 84,
-    userScore: 90,
-    progress: 37,
-    format: "TV",
-  },
-];
-
 type FilterStatus = 'ALL' | 'COMPLETED' | 'CURRENT' | 'DROPPED' | 'PLANNING';
 
 export default function Anime() {
-  const [data, setData] = useState<AnimePageData>({
-    allAnime: INITIAL_ANIME,
-    pinnedIds: [21],
+  const [data, setData] = useState<AnimePageData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cache:client:anime');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return {
+      allAnime: [],
+      pinnedIds: [21],
+    };
   });
+  const [loading, setLoading] = useState(data.allAnime.length === 0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('ALL');
 
@@ -69,26 +34,63 @@ export default function Anime() {
         const res = await fetch('/api/anime');
         if (res.ok) {
           const responseData = (await res.json()) as AnimeResponse;
-          const animeList = Array.isArray(responseData?.allAnime) ? responseData.allAnime : [];
-          const pinnedIds = Array.isArray(responseData?.pinnedIds) ? responseData.pinnedIds : [21];
+          const rawList = Array.isArray(responseData?.allAnime) ? responseData.allAnime : [];
+          // Deduplicate by ID
+          const animeMap = new Map<number, AnimeEntry>();
+          rawList.forEach((a) => {
+            if (a && a.id && !animeMap.has(a.id)) {
+              animeMap.set(a.id, a);
+            }
+          });
+          const animeList = Array.from(animeMap.values());
+          const pinnedIds = Array.isArray(responseData?.pinnedIds) && responseData.pinnedIds.length > 0
+            ? responseData.pinnedIds
+            : [21];
 
-          // Sort primarily by userScore (stars), then averageScore
+          const STATUS_ORDER: Record<string, number> = {
+            COMPLETED: 0,
+            CURRENT: 1,
+            REPEATING: 1,
+            DROPPED: 2,
+            PLANNING: 3,
+            PAUSED: 4,
+          };
+
+          // Strict sort:
+          // 1. Pinned favorites first (One Piece)
+          // 2. High User Stars (Score) descending: 5 stars -> 4 stars -> unrated (0)
+          // 3. For equal scores, status order: COMPLETED -> CURRENT -> DROPPED -> PLANNING
+          // 4. Community average score descending
           const sorted = [...animeList].sort((a, b) => {
             const isPinnedA = pinnedIds.includes(a.id);
             const isPinnedB = pinnedIds.includes(b.id);
             if (isPinnedA && !isPinnedB) return -1;
             if (!isPinnedA && isPinnedB) return 1;
-            const scoreA = a.userScore || a.averageScore || 0;
-            const scoreB = b.userScore || b.averageScore || 0;
-            return scoreB - scoreA;
+
+            const scoreA = a.userScore || 0;
+            const scoreB = b.userScore || 0;
+            if (scoreB !== scoreA) {
+              return scoreB - scoreA;
+            }
+
+            const orderA = STATUS_ORDER[a.status?.toUpperCase() || ''] ?? 99;
+            const orderB = STATUS_ORDER[b.status?.toUpperCase() || ''] ?? 99;
+            if (orderA !== orderB) return orderA - orderB;
+
+            return (b.averageScore || 0) - (a.averageScore || 0);
           });
 
           if (sorted.length > 0) {
             setData({ allAnime: sorted, pinnedIds });
+            try {
+              localStorage.setItem('cache:client:anime', JSON.stringify({ allAnime: sorted, pinnedIds }));
+            } catch {}
           }
         }
       } catch (e) {
         console.error('Failed to fetch anime data:', e);
+      } finally {
+        setLoading(false);
       }
     }
     fetchData();
@@ -113,7 +115,7 @@ export default function Anime() {
   const canonicalUrl = typeof window !== 'undefined' ? `${window.location.origin}/anime` : '';
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-8 pb-20">
       <SEO
         title="Anime Vault // MehmetCanWT"
         description="Personal anime tracking, scores, and series archives."
@@ -196,15 +198,27 @@ export default function Anime() {
       </div>
 
       {/* Grid: Vibrant Anime Cards with Star Rating */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredAnime.map((anime) => {
+      {loading && filteredAnime.length === 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="manga-panel p-4 border-3 border-black bg-white dark:bg-zinc-900 animate-pulse space-y-4">
+              <div className="aspect-[3/4] w-full bg-zinc-200 dark:bg-zinc-800 rounded-md border-2 border-dashed border-zinc-400 dark:border-zinc-700" />
+              <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredAnime.map((anime, index) => {
           const isPinned = data.pinnedIds.includes(anime.id);
-          const rawScore = anime.userScore || anime.averageScore || 0;
-          const stars = Math.min(10, Math.max(1, Math.round(rawScore / 10)));
+          const isPlanning = anime.status?.toUpperCase() === 'PLANNING';
+          const hasUserScore = typeof anime.userScore === 'number' && anime.userScore > 0;
+          const stars = hasUserScore ? (anime.userScore <= 5 ? anime.userScore : Math.min(5, Math.max(1, Math.round(anime.userScore / 20)))) : null;
 
           return (
             <div
-              key={anime.id}
+              key={`${anime.id}-${index}`}
               className={`manga-panel relative group overflow-hidden border-3 border-black p-4 transition-all duration-300 hover:-translate-y-1 ${
                 isPinned
                   ? "bg-rose-50 dark:bg-rose-950/40 border-rose-600 shadow-[5px_5px_0px_0px_rgba(225,29,72,1)]"
@@ -227,11 +241,22 @@ export default function Anime() {
                     </div>
                   )}
 
-                  {/* Star Rating Badge (Replaced percentage with visual stars) */}
-                  <div className="absolute bottom-2 right-2 bg-black/90 text-yellow-400 px-2 py-0.5 text-xs font-black font-mono border border-yellow-400 flex items-center gap-1 shadow-md">
-                    <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                    <span>{stars}/10</span>
-                  </div>
+                  {/* Star Rating Badge (Strictly user-given stars; PLANNING badge for planned anime) */}
+                  {isPlanning ? (
+                    <div className="absolute bottom-2 right-2 bg-black/90 text-zinc-300 px-2 py-0.5 text-xs font-black font-mono border border-zinc-600 flex items-center gap-1 shadow-md">
+                      <Clock size={12} className="text-zinc-400" />
+                      <span>PLANNING</span>
+                    </div>
+                  ) : stars !== null ? (
+                    <div className="absolute bottom-2 right-2 bg-black/90 text-yellow-400 px-2 py-0.5 text-xs font-black font-mono border border-yellow-400 flex items-center gap-1 shadow-md">
+                      <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                      <span>{stars}/5</span>
+                    </div>
+                  ) : (
+                    <div className="absolute bottom-2 right-2 bg-black/90 text-zinc-400 px-2 py-0.5 text-xs font-black font-mono border border-zinc-700 flex items-center gap-1 shadow-md">
+                      <span>UNRATED</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Info & Badges */}
@@ -279,7 +304,8 @@ export default function Anime() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

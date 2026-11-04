@@ -111,9 +111,14 @@ export interface DiscordData {
   discord_status: string;
   activities: DiscordActivity[];
   spotify?: {
+    track_id?: string;
     song: string;
     artist: string;
     album?: string;
     album_art_url: string;
+    timestamps?: {
+      start?: number;
+      end?: number;
+    };
   };
 }

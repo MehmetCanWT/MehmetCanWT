@@ -23,136 +23,21 @@ const DEFAULT_PROFILE: SteamProfile = {
   lastUpdated: new Date().toISOString(),
 };
 
-// Accurate user library directly from verified SteamDB profile
-const INITIAL_GAMES: SteamGame[] = [
-  {
-    appid: 346110,
-    name: "ARK: Survival Evolved",
-    playtime_forever: 110640, // 1,844.0 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/capsule_184x69.jpg",
-  },
-  {
-    appid: 2399830,
-    name: "ARK: Survival Ascended",
-    playtime_forever: 75696, // 1,261.6 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/capsule_184x69.jpg",
-  },
-  {
-    appid: 1172470,
-    name: "Apex Legends",
-    playtime_forever: 47064, // 784.4 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172470/capsule_184x69.jpg",
-  },
-  {
-    appid: 730,
-    name: "Counter-Strike 2",
-    playtime_forever: 46692, // 778.2 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/capsule_184x69.jpg",
-  },
-  {
-    appid: 413150,
-    name: "Stardew Valley",
-    playtime_forever: 40752, // 679.2 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/capsule_184x69.jpg",
-  },
-  {
-    appid: 359550,
-    name: "Tom Clancy's Rainbow Six Siege",
-    playtime_forever: 33066, // 551.1 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/359550/capsule_184x69.jpg",
-  },
-  {
-    appid: 252950,
-    name: "Rocket League",
-    playtime_forever: 26598, // 443.3 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252950/capsule_184x69.jpg",
-  },
-  {
-    appid: 1149720,
-    name: "Hentai Girl",
-    playtime_forever: 15492, // 258.2 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1149720/capsule_184x69.jpg",
-  },
-  {
-    appid: 2424850,
-    name: "TBH: Task Bar Hero",
-    playtime_forever: 10494, // 174.9 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2424850/capsule_184x69.jpg",
-  },
-  {
-    appid: 444090,
-    name: "Paladins",
-    playtime_forever: 4152, // 69.2 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/444090/capsule_184x69.jpg",
-  },
-  {
-    appid: 1222670,
-    name: "The Sims™ 4",
-    playtime_forever: 3978, // 66.3 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1222670/capsule_184x69.jpg",
-  },
-  {
-    appid: 322330,
-    name: "Don't Starve Together",
-    playtime_forever: 3306, // 55.1 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/capsule_184x69.jpg",
-  },
-  {
-    appid: 291550,
-    name: "Brawlhalla",
-    playtime_forever: 2826, // 47.1 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/291550/capsule_184x69.jpg",
-  },
-  {
-    appid: 1293830,
-    name: "Forza Horizon 4",
-    playtime_forever: 2820, // 47.0 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1293830/capsule_184x69.jpg",
-  },
-  {
-    appid: 648800,
-    name: "Raft",
-    playtime_forever: 2778, // 46.3 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/648800/capsule_184x69.jpg",
-  },
-  {
-    appid: 292030,
-    name: "The Witcher 3: Wild Hunt — Remastered",
-    playtime_forever: 2760, // 46.0 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/292030/capsule_184x69.jpg",
-  },
-  {
-    appid: 361420,
-    name: "ASTRONEER",
-    playtime_forever: 2514, // 41.9 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/capsule_184x69.jpg",
-  },
-  {
-    appid: 1231660,
-    name: "Hentai Girl Linda",
-    playtime_forever: 2244, // 37.4 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1231660/capsule_184x69.jpg",
-  },
-  {
-    appid: 524220,
-    name: "NieR:Automata™",
-    playtime_forever: 1926, // 32.1 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/524220/capsule_184x69.jpg",
-  },
-  {
-    appid: 49520,
-    name: "Borderlands 2",
-    playtime_forever: 1914, // 31.9 hrs
-    img_icon_url: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/49520/capsule_184x69.jpg",
-  },
-];
-
 export default function Games() {
-  const [data, setData] = useState<GamesPageData>({
-    profile: DEFAULT_PROFILE,
-    allGames: INITIAL_GAMES,
-    pinnedIds: [346110, 730],
+  const [data, setData] = useState<GamesPageData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('cache:client:games');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return {
+      profile: DEFAULT_PROFILE,
+      allGames: [],
+      pinnedIds: [346110, 730],
+    };
   });
+  const [loading, setLoading] = useState(data.allGames.length === 0);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -161,10 +46,17 @@ export default function Games() {
         const res = await fetch('/api/games');
         if (res.ok) {
           const responseData = (await res.json()) as GamesResponse;
-          const gamesList = Array.isArray(responseData?.allGames) && responseData.allGames.length > 0
-            ? responseData.allGames
-            : INITIAL_GAMES;
-          const pinnedIds = Array.isArray(responseData?.pinnedIds) ? responseData.pinnedIds : [346110, 730];
+          const rawGames = Array.isArray(responseData?.allGames) ? responseData.allGames : [];
+          const gamesMap = new Map<number, SteamGame>();
+          rawGames.forEach((g) => {
+            if (g && g.appid && !gamesMap.has(g.appid)) {
+              gamesMap.set(g.appid, g);
+            }
+          });
+          const gamesList = Array.from(gamesMap.values());
+          const pinnedIds = Array.isArray(responseData?.pinnedIds) && responseData.pinnedIds.length > 0
+            ? responseData.pinnedIds
+            : [346110, 730];
           const profile = responseData?.profile || DEFAULT_PROFILE;
 
           const sorted = [...gamesList].sort((a, b) => {
@@ -175,10 +67,18 @@ export default function Games() {
             return b.playtime_forever - a.playtime_forever;
           });
 
-          setData({ profile, allGames: sorted, pinnedIds });
+          if (sorted.length > 0) {
+            const nextData = { profile, allGames: sorted, pinnedIds };
+            setData(nextData);
+            try {
+              localStorage.setItem('cache:client:games', JSON.stringify(nextData));
+            } catch {}
+          }
         }
       } catch (e) {
-        console.error('Failed to fetch live steam games data:', e);
+        console.error('Failed to fetch steam games:', e);
+      } finally {
+        setLoading(false);
       }
     }
     fetchData();
@@ -215,7 +115,7 @@ export default function Games() {
       </div>
 
       {/* Main Content Interface */}
-      <div className="relative z-10 p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
+      <div className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto space-y-8 pb-20">
         <SEO
           title="Game Vault // FemboyMemo"
           description="Live Steam library, hours played, and profile telemetry with animated background."
@@ -243,17 +143,17 @@ export default function Games() {
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
             {/* Avatar with Animated Steam Frame */}
             <div className="flex items-center gap-5">
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0">
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 flex items-center justify-center">
                 <img
                   src={profile.avatar}
                   alt={profile.personaname}
-                  className="w-full h-full object-cover border-3 border-black dark:border-white/30 rounded-lg shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                  className="w-full h-full object-cover border-3 border-black dark:border-white/30 rounded-lg shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] relative z-0"
                 />
                 {profile.avatarframe && (
                   <img
                     src={profile.avatarframe}
                     alt="Steam Avatar Frame"
-                    className="absolute -top-3.5 -left-3.5 w-[128%] h-[128%] pointer-events-none scale-105"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[122%] h-[122%] max-w-none pointer-events-none select-none z-10"
                   />
                 )}
               </div>
@@ -324,14 +224,25 @@ export default function Games() {
         </div>
 
         {/* Games Grid: Vibrant themed cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGames.map((game) => {
+        {loading && filteredGames.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="manga-panel p-4 border-3 border-purple-500/40 bg-white/90 dark:bg-zinc-900/85 animate-pulse space-y-3">
+                <div className="aspect-video w-full bg-zinc-200 dark:bg-zinc-800 rounded border-2 border-dashed border-zinc-400 dark:border-zinc-700" />
+                <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3" />
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGames.map((game, index) => {
             const isPinned = data.pinnedIds.includes(game.appid);
             const hours = Math.round(game.playtime_forever / 60);
 
             return (
               <div
-                key={game.appid}
+                key={`${game.appid}-${index}`}
                 className={`manga-panel relative group overflow-hidden border-3 p-4 transition-all duration-300 hover:-translate-y-1.5 backdrop-blur-md ${
                   isPinned
                     ? "bg-amber-50/90 dark:bg-amber-950/40 border-amber-500 shadow-[5px_5px_0px_0px_rgba(245,158,11,1)]"
@@ -343,9 +254,23 @@ export default function Games() {
                   <div className="relative aspect-video border-2 border-black dark:border-white/30 mb-3 overflow-hidden bg-zinc-950 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     <img
                       loading="lazy"
+                      referrerPolicy="no-referrer"
                       src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
                       alt={game.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (!target.dataset.fallbackStep) {
+                          target.dataset.fallbackStep = '1';
+                          target.src = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.appid}/capsule_616x353.jpg`;
+                        } else if (target.dataset.fallbackStep === '1') {
+                          target.dataset.fallbackStep = '2';
+                          target.src = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.appid}/header.jpg`;
+                        } else if (target.dataset.fallbackStep === '2') {
+                          target.dataset.fallbackStep = '3';
+                          target.src = game.img_icon_url || `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.appid}/capsule_184x69.jpg`;
+                        }
+                      }}
                     />
                     {isPinned && (
                       <div className="absolute top-2 left-2 bg-amber-400 text-black px-2 py-0.5 text-[10px] font-black uppercase flex items-center gap-1 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
@@ -393,6 +318,7 @@ export default function Games() {
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

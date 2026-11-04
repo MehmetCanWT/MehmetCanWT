@@ -30,8 +30,11 @@ export default function AdminIndex() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiPost<{ success?: boolean; error?: string }>('/api/admin/login', { password: pass });
+      const data = await apiPost<{ success?: boolean; token?: string; error?: string }>('/api/admin/login', { password: pass });
       if (data && data.success) {
+        if (data.token) {
+          localStorage.setItem('mehmetcanwt_admin_token', data.token);
+        }
         setAuth(true);
       } else {
         setError(data?.error || "Authentication failed.");

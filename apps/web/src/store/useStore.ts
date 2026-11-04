@@ -18,6 +18,7 @@ export const useStore = create<AppState>((set) => ({
   },
   logout: () => {
     localStorage.removeItem('mehmetcanwt_admin_auth');
+    localStorage.removeItem('mehmetcanwt_admin_token');
     fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
     set({ isAuth: false });
   },
