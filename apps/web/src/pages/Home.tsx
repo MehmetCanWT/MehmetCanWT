@@ -16,23 +16,69 @@ const DISCORD_ID = "736294975760826438";
 const FAVORITE_ANIME_ID = 21;
 
 interface HomeData {
-  favoriteAnime: AnimeEntry | null;
-  topGame: SteamGame | null;
+  favoriteAnime: AnimeEntry;
+  topGame: SteamGame;
   news: NewsItem[];
   guestbook: GuestbookEntry[];
   dailyQuote: QuoteData;
 }
 
+// Instant fallback state so the page renders in 0ms with zero delay
+const INITIAL_DATA: HomeData = {
+  favoriteAnime: {
+    id: 21,
+    title: { english: "ONE PIECE", romaji: "ONE PIECE" },
+    coverImage: { large: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg" },
+    status: "CURRENT",
+    averageScore: 88,
+    userScore: 100,
+    progress: 1100,
+    description: "Monkey D. Luffy sets out to become the King of the Pirates.",
+  },
+  topGame: {
+    appid: 730,
+    name: "Counter-Strike 2",
+    playtime_forever: 14280,
+    img_icon_url: "d0595ff02f5c79e6027c02b9e4a8b75960010078",
+  },
+  news: [
+    { title: "SYSTEM OPERATIONAL // MEHMETCANWT ARCHIVE ONLINE", source: "System" },
+    { title: "DISCORD & STEAM SYNCED SUCCESSFULLY", source: "Telemetry" },
+  ],
+  guestbook: [
+    {
+      id: 1,
+      username: "SYSTEM",
+      message: "ARCHIVE NODE OPERATIONAL // ALL SYSTEMS NORMAL",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      username: "MehmetCanWT",
+      message: "Welcome to my digital terminal & live archive.",
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  dailyQuote: {
+    quote: "Believe in the me that believes in you!",
+    character: "Kamina",
+    anime: "Gurren Lagann",
+    characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/b2075-sWb5Xz76JWdX.png",
+    animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx2001-XwRnjzGeFWRQ.png",
+  },
+};
+
 export default function Home() {
-  const [data, setData] = useState<HomeData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<HomeData>(INITIAL_DATA);
   const discord = useDiscordPresence(DISCORD_ID);
 
   const fetchGuestbook = useCallback(async () => {
     try {
       const guestbookRes = await api.api.guestbook.get();
       const entries = Array.isArray(guestbookRes?.data) ? (guestbookRes.data as unknown as GuestbookEntry[]) : [];
-      setData((prev) => prev ? { ...prev, guestbook: entries } : prev);
+      if (entries.length > 0) {
+        setData((prev) => ({ ...prev, guestbook: entries }));
+      }
     } catch (e) {
       console.error('Failed to refresh guestbook:', e);
     }
@@ -46,40 +92,34 @@ export default function Home() {
           api.api.games.get().catch(() => ({ data: null })),
           api.api.news.get().catch(() => ({ data: [] })),
           api.api.guestbook.get().catch(() => ({ data: [] })),
-          api.api.quote.get().catch(() => ({ data: null }))
+          api.api.quote.get().catch(() => ({ data: null })),
         ]);
-        
+
         const rawAnime = (animeRes?.data as { allAnime?: AnimeEntry[] } | null)?.allAnime;
-        const allAnime = Array.isArray(rawAnime) ? rawAnime : [];
+        const allAnime = Array.isArray(rawAnime) && rawAnime.length > 0 ? rawAnime : null;
 
         const rawGames = (gameRes?.data as { allGames?: SteamGame[] } | null)?.allGames;
-        const allGames = Array.isArray(rawGames) ? rawGames : [];
+        const allGames = Array.isArray(rawGames) && rawGames.length > 0 ? rawGames : null;
 
-        const newsList = Array.isArray(newsRes?.data) ? (newsRes.data as NewsItem[]) : [];
-        const guestbookList = Array.isArray(guestbookRes?.data) ? (guestbookRes.data as unknown as GuestbookEntry[]) : [];
+        const newsList = Array.isArray(newsRes?.data) && newsRes.data.length > 0 ? (newsRes.data as NewsItem[]) : null;
+        const guestbookList = Array.isArray(guestbookRes?.data) && guestbookRes.data.length > 0 ? (guestbookRes.data as unknown as GuestbookEntry[]) : null;
 
-        const quoteData = (quoteRes?.data && typeof quoteRes.data === 'object' && 'quote' in quoteRes.data)
+        const quoteData = (quoteRes?.data && typeof quoteRes.data === 'object' && 'quote' in quoteRes.data && (quoteRes.data as QuoteData).quote)
           ? (quoteRes.data as QuoteData)
-          : {
-              quote: "Believe in the me that believes in you!",
-              character: "Kamina",
-              anime: "Gurren Lagann",
-              characterImage: "https://s4.anilist.co/file/anilistcdn/character/large/b2075-sWb5Xz76JWdX.png",
-              animeImage: "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx2001-XwRnjzGeFWRQ.png"
-            };
+          : null;
 
-        setData({
-          favoriteAnime: allAnime.find((a) => a.id === FAVORITE_ANIME_ID) || allAnime[0] || null,
-          topGame: [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0] || null,
-          news: newsList,
-          guestbook: guestbookList,
-          dailyQuote: quoteData
-        });
+        setData((prev) => ({
+          favoriteAnime: (allAnime ? (allAnime.find((a) => a.id === FAVORITE_ANIME_ID) || allAnime[0]) : null) || prev.favoriteAnime,
+          topGame: (allGames ? [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)[0] : null) || prev.topGame,
+          news: newsList || prev.news,
+          guestbook: guestbookList || prev.guestbook,
+          dailyQuote: quoteData || prev.dailyQuote,
+        }));
       } catch (e) {
-        console.error('Failed to fetch initial data:', e);
-        setError('Failed to load data. Please refresh the page.');
+        console.error('Background update failed:', e);
       }
     }
+
     fetchData();
   }, []);
 
@@ -92,85 +132,93 @@ export default function Home() {
     return a;
   }, []);
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="font-black uppercase italic text-2xl text-red-600">{error}</p>
-        <button onClick={() => window.location.reload()} className="manga-panel font-black uppercase hover:bg-black hover:text-white transition-all">
-          RETRY
-        </button>
-      </div>
-    );
-  }
-
-  if (!data) return <div className="min-h-screen flex items-center justify-center font-black uppercase italic text-4xl animate-pulse">Initializing System...</div>;
-
-  const { favoriteAnime, topGame, news, guestbook, dailyQuote } = data;
-
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-32">
-      <SEO />
-      {/* Header Panel */}
-      <header className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 manga-panel flex flex-col justify-center items-center xl:items-start text-center xl:text-left overflow-hidden">
-          <h1 className="text-[12vw] sm:text-[9vw] md:text-[6vw] lg:text-[5vw] font-black italic tracking-tighter uppercase leading-none whitespace-nowrap">
-            Mehmet<span className="px-1 sm:px-2 ml-1">Can</span>WT
-          </h1>
-          <div className="mt-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 border-t-4 border-black dark:border-white/20 pt-2 w-full justify-center xl:justify-start">
-            <p className="text-lg sm:text-xl font-bold uppercase tracking-widest text-center">
-              Personal Terminal // Node 01
-            </p>
-            <span className="hidden sm:block text-black/20 dark:text-white/20 text-2xl font-black">/</span>
-            <div className="bg-black text-white dark:bg-white dark:text-black px-3 py-1 text-sm font-black italic uppercase inline-block">
-              Level {age} Human
-            </div>
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20">
+      <SEO 
+        title="MehmetCanWT // Live Archive" 
+        description="Personal Terminal & Archive of MehmetCanWT. Tracking Anime, Games, and Code with live Discord telemetry." 
+        url="https://mehmetcanwt.xyz"
+      />
+      
+      {/* Header Banner */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-4 border-black dark:border-white/20 pb-4 gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic">
+              MehmetCanWT
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 font-bold text-gray-500 uppercase tracking-widest text-sm mt-1">
+            <p>Personal Terminal // Node 01</p>
+            <span>/</span>
+            <span>Level {age} Human</span>
           </div>
         </div>
-        <nav className="manga-panel bg-white text-black dark:bg-black dark:text-white flex flex-col items-center justify-center space-y-2 sm:space-y-4 py-6 sm:py-0">
-           <Link to="/anime" className="text-xl sm:text-2xl font-black italic uppercase hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-black/20 dark:border-white/20 pb-2">
-             <BookOpen size={20} /> Anime List
-           </Link>
-           <Link to="/games" className="text-xl sm:text-2xl font-black italic uppercase hover:text-pink-600 dark:hover:text-pink-400 transition-colors flex items-center gap-2 w-full justify-center border-b border-black/20 dark:border-white/20 pb-2">
-             <Gamepad2 size={20} /> Game Vault
-           </Link>
-           <Link to="/code" className="text-xl sm:text-2xl font-black italic uppercase hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-2 w-full justify-center">
-             <Terminal size={20} /> Code Vault
-           </Link>
+
+        {/* Global Nav */}
+        <nav className="flex flex-wrap gap-2 sm:gap-4">
+          <Link to="/anime" className="manga-panel flex items-center gap-2 font-black uppercase text-sm hover:bg-black hover:text-white transition-all">
+            <BookOpen size={16} /> Anime List
+          </Link>
+          <Link to="/games" className="manga-panel flex items-center gap-2 font-black uppercase text-sm hover:bg-black hover:text-white transition-all">
+            <Gamepad2 size={16} /> Game Vault
+          </Link>
+          <Link to="/code" className="manga-panel flex items-center gap-2 font-black uppercase text-sm bg-yellow-400 text-black hover:bg-black hover:text-white transition-all">
+            <Terminal size={16} /> Code Vault
+          </Link>
         </nav>
       </header>
 
+      {/* Main Grid Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left/Main Column */}
+        {/* Left 2 Cols: Anime, Steam & Guestbook */}
         <div className="lg:col-span-2 space-y-8">
-          <DailyQuote quote={dailyQuote} />
+          {/* Daily Quote Section */}
+          <DailyQuote quote={data.dailyQuote} />
 
-          {/* Highlights Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {favoriteAnime ? <FavoriteAnime anime={favoriteAnime} /> : <div className="manga-panel">Loading...</div>}
-            {topGame ? <TopGame game={topGame} /> : <div className="manga-panel">Loading...</div>}
+          {/* Side by side: Favorite Anime & Top Game */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FavoriteAnime anime={data.favoriteAnime} />
+            <TopGame game={data.topGame} />
           </div>
 
-          <GuestbookSection entries={guestbook} onNewEntry={fetchGuestbook} />
+          {/* Guestbook Section */}
+          <GuestbookSection entries={data.guestbook} onNewEntry={fetchGuestbook} />
         </div>
 
-        {/* Right Sidebar */}
+        {/* Right 1 Col: Live Telemetry */}
         <div className="space-y-8">
           <DiscordPresence discord={discord} />
 
-          {/* Quick Stats / Identity */}
-          <section className="manga-panel bg-white text-black dark:bg-black dark:text-white p-4">
-             <h4 className="font-black italic uppercase border-b border-black/20 dark:border-white/20 mb-2 pb-1 text-sm">IDENTITY_VERIFIED</h4>
-             <div className="space-y-1 text-[10px] font-bold font-mono">
-                <p>LOCATION: TURKIYE</p>
-                <p>ROLE: FULLSTACK_RENEGADE</p>
-                <p>STATUS: EVOLVING</p>
-                <p>UPLINK: ACTIVE</p>
-             </div>
-          </section>
+          {/* Quick Info Panel */}
+          <div className="manga-panel p-6 space-y-4">
+            <h4 className="font-black uppercase tracking-widest text-sm border-b-2 border-black pb-2">
+              IDENTITY_VERIFIED
+            </h4>
+            <div className="space-y-2 text-sm font-bold">
+              <p className="flex justify-between">
+                <span className="text-gray-400">LOCATION:</span>
+                <span>TURKIYE</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-gray-400">ROLE:</span>
+                <span>FULLSTACK_RENEGADE</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-gray-400">STATUS:</span>
+                <span className="text-green-500">EVOLVING</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-gray-400">UPLINK:</span>
+                <span className="text-blue-500">ACTIVE</span>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <NewsTicker news={news} />
+      {/* Ticker at Bottom */}
+      <NewsTicker news={data.news} />
     </div>
   );
 }
