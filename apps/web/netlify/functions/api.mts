@@ -309,7 +309,7 @@ async function fetchAniList(userName: string = "MehmetCanWT"): Promise<AnimeEntr
             }
             status
             progress
-            score(format: POINT_100)
+            score(format: POINT_5)
           }
         }
       }
@@ -355,19 +355,29 @@ async function fetchAniList(userName: string = "MehmetCanWT"): Promise<AnimeEntr
     });
 
     const statusOrder: Record<string, number> = {
-      CURRENT: 0,
-      REPEATING: 0,
-      COMPLETED: 1,
-      PAUSED: 2,
-      DROPPED: 3,
-      PLANNING: 4,
+      COMPLETED: 0,
+      CURRENT: 1,
+      REPEATING: 1,
+      DROPPED: 2,
+      PLANNING: 3,
+      PAUSED: 4,
     };
 
     const sorted = entries.sort((a, b) => {
+      // 1. Star Rating (Score) descending: 5 stars -> 4 stars -> unrated (0)
+      const scoreA = a.userScore || 0;
+      const scoreB = b.userScore || 0;
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+
+      // 2. Status order: COMPLETED -> CURRENT -> DROPPED -> PLANNING
       const orderA = statusOrder[a.status] ?? 99;
       const orderB = statusOrder[b.status] ?? 99;
       if (orderA !== orderB) return orderA - orderB;
-      return (b.userScore || 0) - (a.userScore || 0);
+
+      // 3. Average Score
+      return (b.averageScore || 0) - (a.averageScore || 0);
     });
 
     if (sorted.length > 0) {
@@ -653,6 +663,20 @@ function json(data: unknown, status: number = 200): Response {
   });
 }
 
+// Helper to fetch external image as Base64 data URL for GitHub README embedding
+async function fetchAsBase64(url: string): Promise<string> {
+  try {
+    const res = await fetchWithTimeout(url, { headers: { "User-Agent": "Mozilla/5.0" } }, 3500);
+    if (!res.ok) return url;
+    const buf = await res.arrayBuffer();
+    const b64 = Buffer.from(buf).toString("base64");
+    const mime = url.endsWith(".png") ? "image/png" : "image/jpeg";
+    return `data:${mime};base64,${b64}`;
+  } catch {
+    return url;
+  }
+}
+
 // --- Main Handler ---
 export default async (req: Request, context: Context) => {
   if (req.method === "OPTIONS") {
@@ -842,48 +866,61 @@ export default async (req: Request, context: Context) => {
     const animeCover = "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg";
     const gameBanner = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/header.jpg";
 
+    const [animeBase64, gameBase64] = await Promise.all([
+      fetchAsBase64(animeCover),
+      fetchAsBase64(gameBanner),
+    ]);
+
     const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 280" width="840" height="280">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 320" width="860" height="320">
         <defs>
-          <pattern id="dotPattern" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="1.5" fill="#27272a" />
+          <pattern id="dotPattern" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.5" fill="#2d1525" />
           </pattern>
           <clipPath id="animeClip">
-            <rect x="30" y="80" width="110" height="150" rx="8" />
+            <rect x="58" y="112" width="90" height="120" rx="8" />
           </clipPath>
           <clipPath id="gameClip">
-            <rect x="440" y="80" width="220" height="120" rx="8" />
+            <rect x="455" y="122" width="120" height="68" rx="6" />
           </clipPath>
         </defs>
 
-        <!-- Background with border and halftone dots -->
-        <rect width="840" height="280" fill="#09090b" rx="16" stroke="#27272a" stroke-width="4"/>
-        <rect width="840" height="280" fill="url(#dotPattern)" rx="16" opacity="0.6"/>
+        <!-- Cyber Obsidian Background -->
+        <rect width="860" height="320" fill="#0c0a0f" rx="16" stroke="#3b1828" stroke-width="4"/>
+        <rect width="860" height="320" fill="url(#dotPattern)" rx="16" opacity="0.8"/>
 
         <!-- Top Header Bar -->
-        <rect x="30" y="25" width="780" height="40" fill="#000" rx="6" stroke="#3f3f46" stroke-width="2"/>
-        <text x="45" y="52" fill="#fff" font-family="-apple-system, BlinkMacSystemFont, monospace" font-size="20" font-weight="900" font-style="italic">MEHMETCANWT // LIVE ARCHIVE</text>
-        <circle cx="710" cy="45" r="5" fill="${discordColor}" />
-        <text x="725" y="49" fill="${discordColor}" font-family="monospace" font-size="11" font-weight="bold">${discordStatus}</text>
+        <rect x="35" y="24" width="790" height="42" fill="#0c0a0f" rx="6" stroke="#e11d48" stroke-width="2.5"/>
+        <text x="50" y="52" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, monospace" font-size="20" font-weight="900" font-style="italic">MEHMETCANWT // LIVE ARCHIVE</text>
+        <rect x="740" y="32" width="75" height="26" fill="#052e16" rx="4" stroke="#22c55e" stroke-width="1.5" />
+        <circle cx="752" cy="45" r="4.5" fill="${discordColor}" />
+        <text x="762" y="49" fill="${discordColor}" font-family="monospace" font-size="11" font-weight="900">${discordStatus}</text>
 
-        <!-- Left Column: Favorite Anime -->
-        <rect x="30" y="80" width="110" height="150" fill="#18181b" rx="8" stroke="#3f3f46" stroke-width="2"/>
-        <image href="${animeCover}" x="30" y="80" width="110" height="150" preserveAspectRatio="xMidYMid slice" clip-path="url(#animeClip)"/>
-        <text x="155" y="105" fill="#e11d48" font-family="monospace" font-size="11" font-weight="bold">FAVORITE ANIME</text>
-        <text x="155" y="135" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="900" font-style="italic">ONE PIECE</text>
-        <text x="155" y="160" fill="#a1a1aa" font-family="monospace" font-size="12">STATUS: CURRENT // 88% SCORE</text>
-        <text x="155" y="180" fill="#71717a" font-family="monospace" font-size="11">TOTAL EPISODES: 1100+</text>
+        <!-- Left Column: Favorite Anime Card -->
+        <rect x="35" y="86" width="380" height="175" fill="#150a12" rx="10" stroke="#e11d48" stroke-width="2.5"/>
+        <rect x="58" y="112" width="90" height="120" fill="#000" rx="8" stroke="#e11d48" stroke-width="2"/>
+        <image href="${animeBase64}" x="58" y="112" width="90" height="120" preserveAspectRatio="xMidYMid slice" clip-path="url(#animeClip)"/>
+        
+        <rect x="165" y="110" width="180" height="20" fill="#e11d48" rx="4" />
+        <text x="175" y="124" fill="#ffffff" font-family="monospace" font-size="10" font-weight="900" letter-spacing="1">TOP PICK // FAVORITE ANIME</text>
+        <text x="165" y="156" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="900" font-style="italic">ONE PIECE</text>
+        <text x="165" y="180" fill="#fb7185" font-family="monospace" font-size="11" font-weight="bold">★ 5/5 STARS // STATUS: CURRENT</text>
+        <text x="165" y="202" fill="#facc15" font-family="monospace" font-size="12" font-weight="900">1180+ EPISODES LOGGED</text>
 
-        <!-- Right Column: Most Played Game -->
-        <rect x="440" y="80" width="220" height="120" fill="#18181b" rx="8" stroke="#3f3f46" stroke-width="2"/>
-        <image href="${gameBanner}" x="440" y="80" width="220" height="120" preserveAspectRatio="xMidYMid slice" clip-path="url(#gameClip)"/>
-        <text x="675" y="105" fill="#eab308" font-family="monospace" font-size="11" font-weight="bold">TOP MISSION</text>
-        <text x="675" y="132" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="18" font-weight="900">ARK: SURVIVAL</text>
-        <text x="675" y="155" fill="#a1a1aa" font-family="monospace" font-size="12">1,844 HOURS</text>
-        <text x="675" y="175" fill="#71717a" font-family="monospace" font-size="11">STATUS: MASTERED</text>
+        <!-- Right Column: Top Mission Card -->
+        <rect x="435" y="86" width="390" height="175" fill="#181308" rx="10" stroke="#f59e0b" stroke-width="2.5"/>
+        <rect x="455" y="122" width="120" height="68" fill="#000" rx="6" stroke="#f59e0b" stroke-width="2"/>
+        <image href="${gameBase64}" x="455" y="122" width="120" height="68" preserveAspectRatio="xMidYMid slice" clip-path="url(#gameClip)"/>
+        
+        <rect x="590" y="110" width="170" height="20" fill="#f59e0b" rx="4" />
+        <text x="600" y="124" fill="#000000" font-family="monospace" font-size="10" font-weight="900" letter-spacing="1">TOP MISSION // MASTERED</text>
+        <text x="590" y="156" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="20" font-weight="900" font-style="italic">ARK: SURVIVAL</text>
+        <text x="590" y="180" fill="#fde047" font-family="monospace" font-size="13" font-weight="900">1,844 HOURS RECORDED</text>
+        <text x="590" y="202" fill="#4ade80" font-family="monospace" font-size="11" font-weight="bold">VERIFIED MISSION RECORD</text>
 
         <!-- Bottom Footer Status -->
-        <text x="45" y="258" fill="#71717a" font-family="monospace" font-size="11">SYNCED WITH MEHMETCANWT.XYZ // LEVEL 22 HUMAN</text>
+        <text x="35" y="295" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="900">SYNCED WITH MEHMETCANWT.XYZ</text>
+        <text x="590" y="295" fill="#c084fc" font-family="monospace" font-size="11" font-weight="900">LEVEL 22 HUMAN // ARCHIVE NODE 01</text>
       </svg>
     `.trim();
 
